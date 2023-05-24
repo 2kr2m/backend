@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 import  express from "express";
 import dotenv from "dotenv";
 import {sendEmail} from "../utils/sendEmails.js";
-
+import bcrypt from 'bcrypt';
 dotenv.config();
 const app = express();
 app.use(cookieParser());
@@ -211,6 +211,80 @@ export const resetPass2_post = async (req,res)=>{
         res.status(400).json(errors);
     }
 }
+
+
+//2FA Enable
+export const enableFA = async (req,res)=>{
+    const {email}=req.body
+    try {
+      const user = await  User.findOne({ email: email});
+      if (user.verified == 0 ) {
+        res.status(400).send('Please Verify your Account to enable 2FA');
+      }
+      if (user.twoFactorEnabled == 1 ) {
+        res.status(400).send('Already Enabled');
+      }
+      user.twoFactorEnabled = 1 ;
+      await user.save();
+      res.status(200).send("2FA is enabled");
+      }
+      catch (error) {
+        const errors = handleErrors(error);
+        res.status(400).json(errors);
+      } 
+  }
+  
+  
+  
+  //2FA code generater
+  export const generateTwoFactorSecret = async (req, res) => {
+    const {email}=req.body
+    try {
+    const user = await  User.findOne({ email: email});
+  
+    if (!user ) {
+      res.status(400).send('Invalid user');
+    }
+    if (user.twoFactorEnabled == 0 ) {
+      res.status(400).send('2FA is not Enabled');
+    }
+   
+    const secret = bcrypt.genSaltSync(12);
+    user.twoFactorSecret = secret;
+    await user.save();
+    res.status(200).send(secret);
+    }
+    catch (error) {
+      const errors = handleErrors(error);
+      res.status(400).json(errors);
+    } 
+  }
+  //2FA code verification
+  export const verifyTwoFactorCode = async (req, res) => {
+    const {email,twoFactorCode}=req.body
+    try {
+     const user = await User.findOne({email: email});
+  
+    if (!user) {
+      res.status(401).send('Invalid user');
+    }
+  
+    // const validCode = bcrypt.compareSync(twoFactorCode, user.twoFactorSecret);
+  
+    if (twoFactorCode == user.twoFactorSecret) {
+      res.status(200).send('2FO Authentifie ');
+    }
+     else  {
+      res.status(401).send('Invalid two-factor code');
+     }
+  }
+    catch (error) {
+      const errors = handleErrors(error);
+      res.status(400).json(errors);
+    }} 
+
+
+
 
 export const logout_get= async (req,res)=>{
     res.cookie('jwt','',{maxAge:1});

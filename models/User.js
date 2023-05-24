@@ -40,6 +40,14 @@ const userSchema = new mongoose.Schema({
     verified:{
         type:Number,
         default:0
+    },
+    twoFactorEnabled:{
+        type:Number,
+        default:0
+    },
+    twoFactorSecret:{
+        type:String,
+        default:''
     }
 });
 

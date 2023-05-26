@@ -3,10 +3,11 @@ import validator from 'validator';
 import bcrypt from 'bcrypt';
 
 const isEmail = validator.isEmail;
+const salt = bcrypt.genSaltSync(10);
 const userSchema = new mongoose.Schema({
     id:{
-        type: Date,
-        default:Date.now(),
+        type: String,
+        default: bcrypt.hashSync(Date.now().toString(),salt),
     },
     userName:{
         type:String,
@@ -27,6 +28,7 @@ const userSchema = new mongoose.Schema({
     },
     userType:{
         type:String,
+        enum:['investor','startup','admin'],
         required:[true,"this field is mandatory"]
     },
     role:{
@@ -62,8 +64,8 @@ userSchema.pre('save',async function(next){
 userSchema.statics.login = async function(email,password){
     const user = await this.findOne({email});
     if (user) {
-        // const auth = await bcrypt.compare(password,user.password);
-        password == user.password;
+        const auth = await bcrypt.compare(password,user.password);
+        // password == user.password;
         if(auth){
             return user; 
         }

@@ -19,8 +19,9 @@ const port =process.env.PORT || 5000;
 
 
 connection(); 
-app.use('/api',requireAuth,contractRouter);
-app.use('/authApi',authRouter);
+app.use('/api/contract',requireAuth,contractRouter);
+app.use('/api/auth',authRouter);
+app.use('/api/seed', seedRouter);
 app.get("/home",requireAuth,(req,res)=>{
   res.send('welcome to home');
 })

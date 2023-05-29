@@ -5,6 +5,7 @@ import  express from "express";
 import dotenv from "dotenv";
 import {sendEmail} from "../utils/sendEmails.js";
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 dotenv.config();
 const app = express();
 app.use(cookieParser());
@@ -249,10 +250,11 @@ export const enableFA = async (req,res)=>{
       res.status(400).send('2FA is not Enabled');
     }
    
-    const secret = bcrypt.genSaltSync(12);
+    // const secret = bcrypt.genSaltSync(12);
+    const secret = crypto.randomInt(1000, 9999);
     user.twoFactorSecret = secret;
     await user.save();
-    res.status(200).send(secret);
+    res.status(200).send(secret.toString());
     }
     catch (error) {
       const errors = handleErrors(error);

@@ -1,6 +1,6 @@
 import express from 'express';
 
-import {signup_get,signup_post,login_get,login_post, logout_get,resetPass1_post,resetPass2_post, verif_get} from "../controllers/authController.js";
+import {signup_get,signup_post,login_get,login_post, logout_get,resetPass1_post,resetPass2_post, verif_get, enableFA, generateTwoFactorSecret,verifyTwoFactorCode} from "../controllers/authController.js";
 
 const authRouter = express.Router();
 

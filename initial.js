@@ -3,6 +3,7 @@ import express from 'express';
 import contractRouter from './routes/smartContractsRoutes.js';
 import dotenv from "dotenv";
 import authRouter from './routes/authRoutes.js';
+import seedRouter from './routes/seedRoutes.js';
 import cookieParser from 'cookie-parser';
 import requireAuth from './middlewares/authMidd.js'
 import {connection} from './db.js';

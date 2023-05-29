@@ -48,7 +48,8 @@ const userSchema = new mongoose.Schema({
         default:0
     },
     twoFactorSecret:{
-        type:Number
+        type:Number,
+        default:0
     }
 });
 

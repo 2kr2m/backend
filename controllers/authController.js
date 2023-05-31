@@ -75,7 +75,8 @@ export const verif_get = async (req,res)=>{
     
      user.verified = 1;
     
-    await user.save();
+     await User.findByIdAndUpdate(id, user);
+     
     
     // Send a message to the user to let them know that their account has been verified.
     
@@ -164,18 +165,48 @@ export const signup_post= async (req,res)=>{
 export const login_get=(req,res)=>{
     res.send('<h2>this is login page</h2>');
 }
+
 export const login_post= async (req,res)=>{
     const {email,password} = req.body;
     try {
-        const user = await User.login(email,password);
+        // const user = await User.login(email,password);
+        const user = await User.findOne({email: email});
+        const auth = await bcrypt.compare(password,user.password);
         let jwt = createToken(user._id);
         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
-        res.status(200).json(user.email);
+        
+        if (user.verified==0){
+            res.status(400).send('Please Verify your Account to Login');
+            
+        }
+          
+        else if (!auth){
+           res.status(400).send('fail');
+       console.log(password,user.password);}
+       
+        else if (user.twoFactorEnabled==1){
+                res.redirect('http://localhost:3000/api/auth/generateTwoFactorSecret');
+        }
+        else { 
+            res.status(200).send('success');
+            console.log(password,user.password);}
+
+        // // if (user.twoFactorEnabled==1){
+        // //     res.redirect('http://localhost:3000/api/auth/generateTwoFactorSecret');
+        // // }
+        // res.status(200);
     } catch (error) {
         const errors = handleErrors(error);
         res.status(400).json(errors);
     }
 }
+
+
+
+
+
+
+
 //send email to reset password
 export const resetPass1_post = async (req,res)=>{
     try {
@@ -226,7 +257,7 @@ export const enableFA = async (req,res)=>{
         res.status(400).send('Already Enabled');
       }
       user.twoFactorEnabled = 1 ;
-      await user.save();
+      await User.findOneAndUpdate(user._id ,user);
       res.status(200).send("2FA is enabled");
       }
       catch (error) {
@@ -235,7 +266,9 @@ export const enableFA = async (req,res)=>{
       } 
   }
   
-  
+  export const generateTwoFactorSecret_get=(req,res)=>{
+    res.send('<h2>this is 2FA page</h2>');
+}
   
   //2FA code generater
   export const generateTwoFactorSecret = async (req, res) => {
@@ -253,7 +286,7 @@ export const enableFA = async (req,res)=>{
     // const secret = bcrypt.genSaltSync(12);
     const secret = crypto.randomInt(1000, 9999);
     user.twoFactorSecret = secret;
-    await user.save();
+    await User.findOneAndUpdate(user._id ,user);
     res.status(200).send(secret.toString());
     }
     catch (error) {

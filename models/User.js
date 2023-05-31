@@ -57,23 +57,38 @@ const userSchema = new mongoose.Schema({
 userSchema.pre('save',async function(next){
     const salt = await bcrypt.genSalt();
     this.password= await bcrypt.hash(this.password,salt);
+    // this.password= await bcrypt.hash(this.password,10);
     next();
 });
 
-//Static method to login user
-userSchema.statics.login = async function(email,password){
-    const user = await this.findOne({email});
-    if (user) {
-        const auth = await bcrypt.compare(password,user.password);
-        // password == user.password;
-        if(auth){
-            return user; 
-        }
-        throw Error('invalid inputed data');
-    }
-    throw Error('invalid inputed data');
-}
+// //Static method to login user
+// userSchema.statics.login = async function(email,password){
+//     const user = await this.findOne({email});
+//     try {
+      
+//       const auth = await bcrypt.compare(password,user.password);
+//       if (user) {
+//         if (user.verified==0){
+//             res.status(400).send('Please Verify your Account to Login');
+            
+//         }
 
+        
+//         else if (!auth){
+//             res.status(400).send('fail');
+//             console.log(password,user.password);}
+//         else if (user.twoFactorEnabled==1){
+//                 res.redirect('http://localhost:3000/api/auth/generateTwoFactorSecret');
+//         }
+//         else { 
+//             res.status(200).send('success');
+//             console.log(password,user.password);}
+//           throw Error('invalid inputed data');
+//       }
+//   } catch (error) {
+//     throw Error('invalid inputed data');
+//   }
+// }
 const User = mongoose.model('user',userSchema);
 
 export default User;

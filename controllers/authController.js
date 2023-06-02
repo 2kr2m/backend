@@ -10,6 +10,9 @@ dotenv.config();
 const app = express();
 app.use(cookieParser());
 
+//token blacklist
+export const tokenBlacklist = new Set();
+
 //handle errors
 const handleErrors = (err)=>{
     console.log(err.message,err.code);
@@ -322,6 +325,8 @@ export const enableFA = async (req,res)=>{
 
 
 export const logout_get= async (req,res)=>{
+    tokenBlacklist.add(req.cookies.jwt);
+    console.log(tokenBlacklist);
     res.cookie('jwt','',{maxAge:1});
     res.redirect('/api/login0');
 }

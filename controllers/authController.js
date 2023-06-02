@@ -80,7 +80,7 @@ export const verif_get = async (req,res)=>{
     
     // Send a message to the user to let them know that their account has been verified.
     
-    sendEmail(user.email, 'Account Verified', 'http://localhost:3000/home');
+    sendEmail(user.email,user.userName, 'Account Activated', '<h3>Your Account is Activated</h3> <p>Follow this Link to your profile : http://localhost:3000/home </p>');
     
     res.status(200).send('Account verified');
     
@@ -153,7 +153,7 @@ export const signup_post= async (req,res)=>{
         let token = createToken(createdUser._id);
         res.cookie('jwt',token,{httpOnly:true,maxAge:maxAge*1000});
         const link = `${process.env.BASE_URL_AUTH}/verif/${createdUser._id}/${token}`;
-        await sendEmail(createdUser.email, "Password reset", `Thank you for your registration,please click on this link to verify your account ${link}`);
+        await sendEmail(createdUser.email,createdUser.userName, "Email Activation", `<h3>Click the link below to activate your email.</h3><p>${link}</p> `);
         res.status(201).json({userId:createdUser._id});
 
     } catch (err) {

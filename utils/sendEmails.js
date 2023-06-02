@@ -1,28 +1,44 @@
-import nodemailer from 'nodemailer';
+import mailjet from 'node-mailjet';
 import dotenv from "dotenv";
 dotenv.config();
+const mailjetClient = mailjet.apiConnect(process.env.API_KEY,process.env.SECRET_KEY );
 
-export const sendEmail = async (email, subject, text) => {
+export const sendEmail = async (email,name, subject, text) => {
     try {
-        const transporter = nodemailer.createTransport({
-            host: process.env.HOST,
-            service: process.env.SERVICE,
-            port: 465,
-            secure: true,
-            auth: {
-                user: process.env.USER,
-                pass: process.env.PASS,
-            },
-        });
+ 
 
-        await transporter.sendMail({
-            from: process.env.USER,
-            to: email,
-            subject: subject,
-            text: text,
-        });
+  const request = mailjetClient
+  .post('send', { version: 'v3.1' })
+  .request({
+    Messages: [
+      {
+        From: {
+          Email: 'hello@tokenopp.io',
+          Name: 'contact',
+        },
+        To: [
+          {
+            Email: email,
+            Name: name,
+          },
+        ],
+        Subject: subject,
+        HTMLPart: text,
+      },
+    ],
+  });
 
-        console.log("email sent sucessfully");
+request
+  .then((result) => {
+    console.log(result.body);
+    res.status(200).json({ message: 'Email sent for verification.' });
+  })
+  .catch((error) => {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while sending the email.' });
+  });
+
+
     } catch (error) {
         console.log(error, "email not sent");
     }

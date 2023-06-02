@@ -4,11 +4,11 @@ import dotenv from "dotenv";
 dotenv.config();
 export const connection = async () => {
     try {
-        const connectionParams = {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        };
-        await mongoose.connect(process.env.MONGODB_URI, connectionParams);
+        // const connectionParams = {
+        //     useNewUrlParser: true,
+        //     useUnifiedTopology: true,
+        // };
+        await mongoose.connect(process.env.MONGODB_URI);
         console.log("connected to database.");
     } catch (error) {
         console.log(error, "could not connect database.");

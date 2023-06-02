@@ -5,16 +5,23 @@ import dotenv from "dotenv";
 import authRouter from './routes/authRoutes.js';
 import seedRouter from './routes/seedRoutes.js';
 import cookieParser from 'cookie-parser';
-import requireAuth from './middlewares/authMidd.js'
+import requireAuth from './middlewares/authMidd.js';
+import cors from 'cors';
 import {connection} from './db.js';
-dotenv.config();
 
 const app = express();
+dotenv.config();
 
 //middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+// Enable CORS with custom options
+app.use(cors({
+  origin: 'http://localhost:3011', 
+  allowedHeaders: ['Content-Type', 'Authorization'], // Replace with the allowed headers
+  credentials: true
+}));
 
 const port =process.env.PORT || 5000;
 

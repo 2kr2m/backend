@@ -204,12 +204,6 @@ export const login_post= async (req,res)=>{
     }
 }
 
-
-
-
-
-
-
 //send email to reset password
 export const resetPass1_post = async (req,res)=>{
     try {

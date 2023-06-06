@@ -23,6 +23,7 @@
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.0.3",
+    "node-mailjet": "^6.0.2",
     "nodemailer": "^6.9.2",
     "nodemon": "^2.0.21",
     "solc": "^0.8.19",

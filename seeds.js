@@ -11,7 +11,7 @@ const data = {
       role: 'superadmin',
       createdBy: 0,
       verified: 1,
-      twoFactorEnabled: 1,
+      twoFactorEnabled: 0,
       twoFactorSecret: ''
       
     }

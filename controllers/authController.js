@@ -45,8 +45,13 @@ const handleErrors = (err)=>{
 //create Token
 var password=process.env.AUTH_SECRET;
 const maxAge = 3 * 24 * 60 * 60;
-const createToken = (id)=>{
-    return jwt.sign({id},password,{
+const createToken = (user)=>{
+    return jwt.sign(    
+      {
+        id: user.id,
+        userType: user.userType
+      },
+        password,{
         expiresIn:maxAge
     });
 };
@@ -68,7 +73,7 @@ export const verif_get = async (req,res)=>{
     // jwt token verification
 
      if (req.cookies.jwt !== req.params.token) return res.status(400).send("Invalid link or expired");
-
+   
     
     // Check if the user has already verified their account.
     
@@ -175,7 +180,7 @@ export const login_post= async (req,res)=>{
         // const user = await User.login(email,password);
         const user = await User.findOne({email: email});
         const auth = await bcrypt.compare(password,user.password);
-        let jwt = createToken(user._id);
+        let jwt = createToken(user);
         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
         
         if (user.verified==0){
@@ -185,19 +190,16 @@ export const login_post= async (req,res)=>{
           
         else if (!auth){
            res.status(400).send('fail');
-       console.log(password,user.password);}
+    }
        
         else if (user.twoFactorEnabled==1){
                 res.redirect('http://localhost:3000/api/auth/generateTwoFactorSecret');
         }
         else { 
             res.status(200).send('success');
-            console.log(password,user.password);}
+        }
 
-        // // if (user.twoFactorEnabled==1){
-        // //     res.redirect('http://localhost:3000/api/auth/generateTwoFactorSecret');
-        // // }
-        // res.status(200);
+ 
     } catch (error) {
         const errors = handleErrors(error);
         res.status(400).json(errors);

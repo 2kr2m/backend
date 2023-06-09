@@ -23,7 +23,7 @@ app.use(cookieParser());
 // Enable CORS with custom options
 app.use(cors({
   origin: 'http://localhost:3011', 
-  allowedHeaders: ['Content-Type', 'Authorization'], // Replace with the allowed headers
+  allowedHeaders: ['Content-Type', 'authorization'], // Replace with the allowed headers
   credentials: true
 }));
 

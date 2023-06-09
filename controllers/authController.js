@@ -181,8 +181,9 @@ export const login_post= async (req,res)=>{
         const user = await User.findOne({email: email});
         const auth = await bcrypt.compare(password,user.password);
         let jwt = createToken(user);
+        req.headers.authorization = `Bearer ${jwt}`;
         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
-        
+        const accessToken = req.cookies.jwt;
         if (user.verified==0){
             res.status(400).send('Please Verify your Account to Login');
             
@@ -196,11 +197,13 @@ export const login_post= async (req,res)=>{
                 res.redirect('http://localhost:3000/api/auth/generateTwoFactorSecret');
         }
         else { 
-            res.status(200).send('success');
+            console.log('hi i m login endpoint');
+            res.status(200).send(`data:${accessToken}`);
         }
 
  
     } catch (error) {
+        console.log('something went wrong');
         const errors = handleErrors(error);
         res.status(400).json(errors);
     }
@@ -214,8 +217,9 @@ export const resetPass1_post = async (req,res)=>{
         let jwt = createToken(user._id);
         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
         
-        const link = `${process.env.BASE_URL_AUTH}/reset-password/${user._id}/${jwt}`;
-        await sendEmail(user.email, "Password reset", `Hello ${user.userName} , to reset password click on this link${link}`);
+        const link = `http://localhost:3011/metronic8/react/demo1/auth/reset-password`;
+        await sendEmail(user.email,user.userName, "Password reset", `Hello ${user.userName} , to reset password click on this link ${link}`);
+        console.log('draconian');
         res.send("password reset link sent to your email account");
 
     } catch (error) {

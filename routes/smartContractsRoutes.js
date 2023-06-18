@@ -10,7 +10,7 @@ const contractRouter = express.Router()
 const blockchainURI=process.env.BOCKCHAIN_URI;
 // console.log(blockchainURI);
 // 'http://172.21.0.3:8545'
-const web3 =new Web3(new Web3.providers.HttpProvider(blockchainURI));
+const web3 =new Web3(new Web3.providers.HttpProvider("http://blockchain.docker.local"));
 const file = fs.readFileSync("initial.sol").toString();
 
 const input = {

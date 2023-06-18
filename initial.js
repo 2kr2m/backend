@@ -31,7 +31,7 @@ const port =process.env.PORT || 5000;
 
 
 connection(); 
-app.use('/api/contract',requireAuth,contractRouter);
+app.use('/api/contract',contractRouter);
 app.use('/api/auth',authRouter);
 app.use('/api/users',requireAuth,isAdmin,userRouter)
 app.use('/api/seed', seedRouter);

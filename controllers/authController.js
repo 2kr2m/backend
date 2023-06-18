@@ -6,12 +6,18 @@ import dotenv from "dotenv";
 import {sendEmail} from "../utils/sendEmails.js";
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import Web3 from 'web3';
+import {generateTwoFactorSecret} from "../utils/generateTwoFactorSecret.js";
 dotenv.config();
 const app = express();
 app.use(cookieParser());
 
 //token blacklist
 export const tokenBlacklist = new Set();
+const blockchainURI=process.env.BOCKCHAIN_URI;
+
+const web3 =new Web3(new Web3.providers.HttpProvider("http://blockchain.docker.local"));
+
 
 //handle errors
 const handleErrors = (err)=>{
@@ -72,7 +78,6 @@ export const verif_get = async (req,res)=>{
      if (!user) return res.status(404).send('User not found');
     // jwt token verification
 
-     if (req.cookies.jwt !== req.params.token) return res.status(400).send("Invalid link or expired");
    
     
     // Check if the user has already verified their account.
@@ -90,7 +95,7 @@ export const verif_get = async (req,res)=>{
     
     sendEmail(user.email,user.userName, 'Account Activated', '<h3>Your Account is Activated</h3> <p>Follow this Link to your profile : http://localhost:3000/home </p>');
     
-    res.status(200).send('Account verified');
+    res.status(200).redirect('http://localhost:3011/metronic8/react/demo1/auth/login');
     
     } catch (error) {
     
@@ -158,11 +163,11 @@ export const signup_post= async (req,res)=>{
     const user = req.body;
     try {
         const createdUser = await User.create(user);
-        let token = createToken(createdUser._id);
-        res.cookie('jwt',token,{httpOnly:true,maxAge:maxAge*1000});
-        const link = `${process.env.BASE_URL_AUTH}/verif/${createdUser._id}/${token}`;
+        let accessToken = createToken(createdUser._id);
+        res.cookie('jwt',accessToken,{httpOnly:true,maxAge:maxAge*1000});
+        const link = `${process.env.BASE_URL_AUTH}/verif/${createdUser._id}/${accessToken}`;
         await sendEmail(createdUser.email,createdUser.userName, "Email Activation", `<h3>Click the link below to activate your email.</h3><p>${link}</p> `);
-        res.status(201).json({userId:createdUser._id});
+        res.status(201).json(`data:${accessToken}`);
 
     } catch (err) {
         const errors = handleErrors(err);
@@ -182,7 +187,12 @@ export const login_post= async (req,res)=>{
         const auth = await bcrypt.compare(password,user.password);
         let jwt = createToken(user);
         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
-        
+      if (user.address==''){
+        const address =  await web3.eth.personal.newAccount(password);
+        user.address = address;}
+      
+        user.accessToken = jwt;
+        await User.findOneAndUpdate(user._id ,user);
         if (user.verified==0){
             res.status(400).send('Please Verify your Account to Login');
             
@@ -193,10 +203,13 @@ export const login_post= async (req,res)=>{
     }
        
         else if (user.twoFactorEnabled==1){
-                res.redirect('http://localhost:3000/api/auth/generateTwoFactorSecret');
+                await generateTwoFactorSecret(user.email,user.userName);
+                res.send(user);
+
         }
         else { 
-            res.status(200).send('success');
+            res.status(200).send(user);
+            console.log(password,user.password);
         }
 
  
@@ -213,10 +226,12 @@ export const resetPass1_post = async (req,res)=>{
         if (!user) return res.status(400).send("user with given email doesn't exist");
         let jwt = createToken(user._id);
         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
-        
-        const link = `${process.env.BASE_URL_AUTH}/reset-password/${user._id}/${jwt}`;
-        await sendEmail(user.email, "Password reset", `Hello ${user.userName} , to reset password click on this link${link}`);
+        const length = 10;
+        const resetToken = crypto.randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
+        await sendEmail(user.email, user.userName,"Password reset", `Hello ${user.userName} , This is the secret code to reset your password  <p>${resetToken}</p>`);
         res.send("password reset link sent to your email account");
+        user.resetToken = resetToken;
+        await User.findOneAndUpdate(user._id ,user);
 
     } catch (error) {
         console.log(error);
@@ -225,15 +240,17 @@ export const resetPass1_post = async (req,res)=>{
     }
 }
 
+
 //enter new password for the reset
 export const resetPass2_post = async (req,res)=>{
     try {
-        const user = await User.findById(req.params.userId);
-        if (!user) return res.status(400).send("invalid link or expired");
-        if (req.cookies.jwt !== req.params.token) return res.status(400).send("Invalid link or expired");
-        
-        user.password = req.body.password;
+        const { code , password } = req.body;
+        const user = await User.findOne({resetToken:code});
+        if (!user) return res.status(400).send("user doesn't exist");
+        user.password = password;
+        user.resetToken = '';        
         await user.save();
+        sendEmail(user.email,user.userName, 'Password reset successful', '<h3>Your Password is reset successful</h3>');
 
         res.send("password reset sucessfully.");
     } catch (error) {
@@ -269,30 +286,30 @@ export const enableFA = async (req,res)=>{
     res.send('<h2>this is 2FA page</h2>');
 }
   
-  //2FA code generater
-  export const generateTwoFactorSecret = async (req, res) => {
-    const {email}=req.body
-    try {
-    const user = await  User.findOne({ email: email});
+  // //2FA code generater
+  // export const generateTwoFactorSecret = async (req, res) => {
+  //   const {email}=req.body
+  //   try {
+  //   const user = await  User.findOne({ email: email});
   
-    if (!user ) {
-      res.status(400).send('Invalid user');
-    }
-    if (user.twoFactorEnabled == 0 ) {
-      res.status(400).send('2FA is not Enabled');
-    }
+  //   if (!user ) {
+  //     res.status(400).send('Invalid user');
+  //   }
+  //   if (user.twoFactorEnabled == 0 ) {
+  //     res.status(400).send('2FA is not Enabled');
+  //   }
    
-    // const secret = bcrypt.genSaltSync(12);
-    const secret = crypto.randomInt(1000, 9999);
-    user.twoFactorSecret = secret;
-    await User.findOneAndUpdate(user._id ,user);
-    res.status(200).send(secret.toString());
-    }
-    catch (error) {
-      const errors = handleErrors(error);
-      res.status(400).json(errors);
-    } 
-  }
+  //   // const secret = bcrypt.genSaltSync(12);
+  //   const secret = crypto.randomInt(1000, 9999);
+  //   user.twoFactorSecret = secret;
+  //   await User.findOneAndUpdate(user._id ,user);
+  //   res.status(200).send(secret.toString());
+  //   }
+  //   catch (error) {
+  //     const errors = handleErrors(error);
+  //     res.status(400).json(errors);
+  //   } 
+  // }
   //2FA code verification
   export const verifyTwoFactorCode = async (req, res) => {
     const {email,twoFactorCode}=req.body
@@ -306,7 +323,7 @@ export const enableFA = async (req,res)=>{
     // const validCode = bcrypt.compareSync(twoFactorCode, user.twoFactorSecret);
   
     if (twoFactorCode == user.twoFactorSecret) {
-      res.status(200).send('2FO Authentifie ');
+      res.status(200).send(user);
     }
      else  {
       res.status(401).send('Invalid two-factor code');
@@ -320,11 +337,57 @@ export const enableFA = async (req,res)=>{
 
 
 
-export const logout_get= async (req,res)=>{
-    tokenBlacklist.add(req.cookies.jwt);
-    console.log(tokenBlacklist);
-    res.cookie('jwt','',{maxAge:1});
-    res.redirect('/api/login0');
+// export const logout = async (req, res) => {
+//       // Get the access token from the request object
+//       const accessToken = req.params.accessToken;
+    
+//       // Find the user in the database
+//       try {
+//         const user = await User.findOne({ accessToken: accessToken });
+      
+//       // Set the user's access token to an empty string
+//       user.accessToken = '';
+    
+//       // Update the user in the database
+//       await User.findOneAndUpdate(user._id, user);
+    
+//       // Set a cookie with an empty value and a maximum age of 1 second
+//       res.cookie('jwt', '', { httpOnly: true, maxAge: 1 });
+    
+//       // Log that the user has logged out successfully
+//       console.log('Logged out successfully');
+//     } catch (error) {
+//       // Handle the error
+//       const errors = handleErrors(error);
+//       res.status(400).json(errors);
+//       return;
+//     }
+  
+//     };
+export const logout= async (req,res)=>{
+  tokenBlacklist.add(req.cookies.jwt);
+  console.log(tokenBlacklist);
+  res.cookie('jwt','',{maxAge:1});
+  res.redirect('/auth/login');
 }
+
+    
+
+export const getuser = async (req,res) => {
+  const { authorization } = req.headers;
+  const accessToken = authorization && authorization.split(' ')[1];
+
+  if (accessToken) {
+    const user = await User.findOne({ accessToken: accessToken }); // Use an object with accessToken property
+    if (user) {
+      res.send(user);
+      console.log(user);
+    } else {
+      res.status(404).send({ message: "User Not Found" });
+    }
+  } else {
+    res.status(401).send({ message: "Unauthorized" });
+  }
+};
 
 // module.exports = signup_get ;

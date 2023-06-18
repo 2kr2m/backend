@@ -50,7 +50,20 @@ const userSchema = new mongoose.Schema({
     twoFactorSecret:{
         type:Number,
         default:0
+    },
+    accessToken:{
+        type: String,
+        default:''
+    },
+    resetToken:{
+        type: String,
+        default:''
+    } ,
+    address:{
+        type: String,
+        default:''
     }
+
 });
 
 // fire a hash function for password before save

@@ -31,11 +31,11 @@ export const sendEmail = async (email,name, subject, text) => {
 request
   .then((result) => {
     console.log(result.body);
-    res.status(200).json({ message: 'Email sent for verification.' });
+
   })
   .catch((error) => {
     console.error(error);
-    res.status(500).json({ error: 'An error occurred while sending the email.' });
+   
   });
 
 

@@ -8,6 +8,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import Web3 from 'web3';
 import {generateTwoFactorSecret} from "../utils/generateTwoFactorSecret.js";
+import { onConnection } from "../utils/buildNotif.js";
 dotenv.config();
 const app = express();
 app.use(cookieParser());
@@ -54,6 +55,7 @@ const maxAge = 3 * 24 * 60 * 60;
 const createToken = (user)=>{
     return jwt.sign(    
       {
+        _id: user._id,
         id: user.id,
         userType: user.userType
       },
@@ -189,7 +191,9 @@ export const login_post= async (req,res)=>{
         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
       if (user.address==''){
         const address =  await web3.eth.personal.newAccount(password);
-        user.address = address;}
+        user.address = address;
+      onConnection(user,address);
+      }
       
         user.accessToken = jwt;
         await User.findOneAndUpdate(user._id ,user);

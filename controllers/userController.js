@@ -83,5 +83,26 @@ export const updateUser = async (req, res) => {
       res.status(500).json({ error: 'An error occurred' });
     }
   };
+// Update user status endpoint
+export const updateStatus = async (req, res) => {
+  try{
+ 
+   const userId = req.params.userId;
+   const newStatus = req.body;
+ 
+   // Update the user's status in the server data
+   const user = await User.findByIdAndUpdate(userId, newStatus, { new: true });
+   if (user) {
+     // Emit the updated user to connected clients
+     statusUpdate(user);
+   }else {
+     res.status(404).json({ error: 'User not found' });
+   } 
+  }catch (error) {
+     res.status(500).json({ error: 'An error occurred' });
+   }
+ 
+   res.send('User status updated');
+ };
 
   

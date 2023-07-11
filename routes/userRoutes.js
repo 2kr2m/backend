@@ -1,7 +1,7 @@
 import express from 'express';
-import { addUser, deleteUser, getAll, getUserById, updateUser } from '../controllers/userController.js';
+import { addUser, deleteUser, getAll, getUserById, updateUser,updateStatus } from '../controllers/userController.js';
 const userRouter = express.Router();
-
+userRouter.post('/:userId/update-status',updateStatus);
 userRouter.get('/',getAll);
 userRouter.get('/:id',getUserById);
 userRouter.post('/add',addUser);

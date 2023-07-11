@@ -9,8 +9,15 @@ import {requireAuth,isAdmin} from './middlewares/authMidd.js';
 import cors from 'cors';
 import {connection} from './db.js';
 import userRouter from './routes/userRoutes.js';
+import http from 'http';
+import { Server as SocketIO } from 'socket.io';
 // import isAdmin from './middlewares/isAdmin.js';
 import bodyParser from 'body-parser';
+import { campaignExpirationAlert, onConnection } from './utils/buildNotif.js';
+import notificationfRouter from './routes/notificationRoutes.js';
+import campaignRouter from './routes/campaignRoutes.js';
+import fundDemandRouter from './routes/userRoute.js';
+import upload  from 'express-fileupload';
 
 const app = express();
 dotenv.config();
@@ -20,10 +27,12 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(upload());
+
 // Enable CORS with custom options
 app.use(cors({
   origin: 'http://localhost:3011', 
-  allowedHeaders: ['Content-Type', 'Authorization'], // Replace with the allowed headers
+  allowedHeaders: ['Content-Type', 'Authorization'], 
   credentials: true
 }));
 
@@ -31,11 +40,29 @@ const port =process.env.PORT || 5000;
 
 
 connection(); 
+
+
 app.use('/api/contract',contractRouter);
 app.use('/api/auth',authRouter);
-app.use('/api/users',requireAuth,isAdmin,userRouter)
+app.use('/api/users',requireAuth,isAdmin,userRouter)//,requireAuth,isAdmin
+app.use('/api/users',requireAuth,notificationfRouter);
 app.use('/api/seed', seedRouter);
-app.get("/home",requireAuth,(req,res)=>{
+app.use('/api/demands',requireAuth,fundDemandRouter);
+app.use('/api/campaign',requireAuth,campaignRouter);
+app.get("/home",requireAuth,async (req,res)=>{
+  const user = req.user;
+  campaignExpirationAlert(user);
   res.send('welcome to home');
 })
-app.listen(port,()=>console.log(`Backend server is running on ${port}`));
+
+const server = http.createServer(app);
+const io = new SocketIO(server, {
+  cors: {
+    origin: 'http://localhost:3011', // Replace with the allowed origin(s) for your frontend app
+    methods: ['GET', 'POST'], // Specify the allowed HTTP methods
+  },
+}
+);
+
+server.listen(port,()=>console.log(`Backend server is running on ${port}`));
+export default io;

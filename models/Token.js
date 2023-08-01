@@ -11,21 +11,21 @@ const tokenSchema = new mongoose.Schema({
     },
     tokenName:{
         type:String,
-        required:[true,"please enter a token name"],
-        unique:true,
+        // required:[true,"please enter a token name"],
+        // unique:true,
     },
     tokenSymbol:{
         type:String,
-        required:[true,"please enter a token symbol"],
-        unique:true,
+        // required:[true,"please enter a token symbol"],
+        // unique:true,
     },
     tokenTotalSupply:{
         type:String,
-        required:[true,"please enter a token supply"],
+        // required:[true,"please enter a token supply"],
     },
     tokenPrice:{
         type:String,
-        required:[true,"please enter a token price"],
+        // required:[true,"please enter a token price"],
     },
     minInvest:{
         type:String,
@@ -37,33 +37,36 @@ const tokenSchema = new mongoose.Schema({
     },
     companyAccount:{
         type:String,
-        required:[true,"please enter a company account"],
+        // required:[true,"please enter a company account"],
     },
     tokenoppAccount:{
         type:String,
-        required:[true,"please enter a tokenopp account"],
+        // required:[true,"please enter a tokenopp account"],
+        default:'Tokenopp address'
     },
     startDate:{
         type:Date,
-        required:[true,"please enter a valide date"],
+        // required:[true,"please enter a valide date"],
+        default:'',
     },
     endDate:{
         type:Date,
-        required:[true,"please enter a valide date"],
+        // required:[true,"please enter a valide date"],
+        default:'',
+
+    },
+    duration:{
+        type: Number,
+        // required:[true,"please enter the duration of campaign"],
     },
     RedemptionType:{
         type:String,
         enum:['yearly','monthly','quarterly'],
-        required:[true,"this field is mandatory"],
+        // required:[true,"this field is mandatory"],
     },
     yieldValue:{
         type:String,
-        required:[true,"this field is mandatory"],
-    },
-    actionType:{
-        type:String,
-        enum:['share','debt','revenue sharing'],
-        required:[true,"this field is mandatory"],
+        // required:[true,"this field is mandatory"],
     },
     contractAddress:{
         type:String,
@@ -81,6 +84,49 @@ const tokenSchema = new mongoose.Schema({
         type:String,
         default:'',
     },
+    status:{
+        type:String,
+        enum:['Pending','Rejected','Approved'],
+        default: 'Pending'
+    },
+    campaignName:{
+        type:String,
+        required: [true, 'this field is mandatory']
+
+
+    },
+    amount:{
+        type:String,
+        required: [true, 'this field is mandatory'],
+        default:'0',
+    },
+    actionType:{
+        type:String,
+        enum:['share','debt','revenue sharing'],
+        required:[true,"this field is mandatory"],
+
+    },
+    shares:{
+        type:String,
+        required:[true,"this field is mandatory"],
+
+    },
+    numberOfInvestors:{
+        type:String,
+        default:'',
+    },
+    readyToStart:{
+        type:Number,
+        default:0,
+    },
+    motifRejection:{
+        type:String,
+        default:''
+    },
+    investorCount:{
+        type:Number,
+        default:0,
+    }
 })
 const Token = mongoose.model('token',tokenSchema);
 

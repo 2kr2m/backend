@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import cookieParser from "cookie-parser";
 import  express from "express";
 import dotenv from "dotenv";
+import { statusUpdate } from "../utils/buildNotif.js";
 
 dotenv.config();
 const app = express();
@@ -14,9 +15,16 @@ wich the ADMIN responsible for
  */
 
 //get all users
-export const getAll = async (req,res)=>{
-    const users = await User.find({});
-    res.send(users);
+export const getUsers = async (req,res)=>{
+  try {
+    const userType = req.query.userType;  
+    const result = await User.find({userType: userType}); 
+
+  res.json(result);
+} catch (error) {
+  console.error('Error retrieving Users:', error);
+  res.status(500).json({ error: 'Internal Server Error' });
+}
 }
 
 //get a specific user by admin
@@ -24,7 +32,7 @@ export const getUserById = async (req,res) => {
     const { id } = req.params;
     const user = await User.findById(id);
     if (user) {
-      res.send(user);
+      res.json(user);
     } else {
       res.status(404).send({ message: "User Not Found" });
     }
@@ -37,7 +45,6 @@ export const addUser = async (req,res) => {
         user.verified = 1;
         user.createdBy='0';
         const createdUser = await User.create(user);
-        console.log(createdUser);
         res.send('user ceated by admin');
     }catch (error) {
         console.log(error);
@@ -53,14 +60,16 @@ export const deleteUser = async (req,res)=>{
         if (user && user.email === "contact@tokenopp.io") {
           res.status(400).send({ message: "Can Not Delete Admin User" });
           return;
-        } 
-
-        const deletedUser = await User.findByIdAndRemove(userId);
-        if (deletedUser) {
-          res.json({ message: 'User deleted successfully' });
-        } else {
-          res.status(404).json({ error: 'User not found' });
+        }else{
+          const deletedUser = await User.findByIdAndUpdate(userId, {isDeleted:1}, { new: true });;
+          if (deletedUser) {
+            res.json({ message: 'User deleted successfully' });
+          } else {
+            res.status(404).json({ error: 'User not found' });
+          }
         }
+
+
       } catch (error) {
         res.status(500).json({ error: 'An error occurred' });
       }
@@ -88,10 +97,11 @@ export const updateStatus = async (req, res) => {
   try{
  
    const userId = req.params.userId;
-   const newStatus = req.body;
+   const user0 = await User.findById(userId);
+   const newStatus = user0.status === 'pending' ? 'verified' : 'pending' ;
  
    // Update the user's status in the server data
-   const user = await User.findByIdAndUpdate(userId, newStatus, { new: true });
+   const user = await User.findByIdAndUpdate(userId, { status: newStatus }, { new: true });
    if (user) {
      // Emit the updated user to connected clients
      statusUpdate(user);
@@ -104,5 +114,3 @@ export const updateStatus = async (req, res) => {
  
    res.send('User status updated');
  };
-
-  

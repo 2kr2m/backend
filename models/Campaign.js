@@ -45,7 +45,9 @@ const campaignSchema = new mongoose.Schema({
     },
     successStatus:{
         type: Number,
+
         default: 2 
+
     }
 });
 

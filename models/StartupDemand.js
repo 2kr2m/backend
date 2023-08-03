@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const demandSchema = new mongoose.Schema({
+const startupDemandSchema = new mongoose.Schema({
 
     company_name : {
         type: String ,
@@ -90,6 +90,6 @@ const demandSchema = new mongoose.Schema({
         default : Date.now
     }
 });
-const Demand = mongoose.model('Demand', demandSchema);
+const startupDemand = mongoose.model('startupDemand', startupDemandSchema);
 
-export default Demand;
+export default startupDemand;

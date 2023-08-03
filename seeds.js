@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs';
+
 export const passAdmin = 'token0PP2dmin';
+
 const data = {
   users: [
     {

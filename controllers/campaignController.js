@@ -7,6 +7,10 @@ import { endedCampaign, notifStartCampaign } from "../utils/buildNotif.js";
 import io from "../initial.js";
 import Buytoken from "../models/Buytoken.js";
 import { sendEmail } from "../utils/sendEmails.js";
+import moment from 'moment';
+import Feedback from "../models/Feedback.js";
+
+
 
 
 export const startCampaign = async (req,res)=>{
@@ -39,13 +43,16 @@ export const startCampaign = async (req,res)=>{
             const tokenUpdate ={
                 status:"Approved",
                 startDate:createdAt,
-                endDate:expirationDate
+
+                endDate:expirationDate,
+                remainToken:tokenQuantity
             }
             const approvedToken = await Token.findByIdAndUpdate(id,tokenUpdate, { new: true });
             //deploy smart contract
             await deploySmartContract(passAdmin,tokenoppAddress,approvedToken);
             
             notifStartCampaign(createdcampaign);
+
             res.status(201).send(createdcampaign);
             
 
@@ -67,16 +74,7 @@ export const startCampaign = async (req,res)=>{
     //     campaign.ownerId = owner;
     //     campaign.createdAt = createdAt;
     //     campaign.expirationDate = expirationDate;
-    
-    //     const createdcampaign = await Campaign.create(campaign);
-    //     notifStartCampaign(createdcampaign);
-    //     res.status(201).send(createdcampaign);
-    // } catch (error) {
-    //     console.log(error);
 
-    // }
-
-    
 }
 export const rejectCampaign = async (req,res)=>{
     try {
@@ -91,10 +89,18 @@ export const rejectCampaign = async (req,res)=>{
     }
 }
 
+
 export const requestedCampaigns = async (req, res) => {
 	try {
-      const status = req.query.status;  
-	  const result = await Token.find({status: status}); 
+      const status = req.query.status; 
+      let result;
+      if (status == 'all'){
+        result = await Token.find();
+      }
+      else{
+        result = await Token.find({status: status});
+      }
+	    
   
 	  res.json(result);
 	} catch (error) {
@@ -103,17 +109,25 @@ export const requestedCampaigns = async (req, res) => {
 	}
   };
   export const updateCampaign = async (req, res) => {
-	try {
+    const {motifRejection} = req.body;
+
+    try {
         const tokenId = req.params.id;
-        const updateData = req.body;
+        const rejectDate = new Date();
+        const tokenopp = await User.findById(req.user._id);
+        const tokenUpdate ={
+          status:"Rejected",
+          rejectDate:rejectDate,
+          rejectedBy:tokenopp.userName,
+          motifRejection:motifRejection
+
+      }
+
+        const updatedToken = await Token.findByIdAndUpdate(tokenId, tokenUpdate, { new: true });
     
-        const updatedToken = await Token.findByIdAndUpdate(tokenId, updateData, { new: true });
-    
-        if (updatedToken) {
           res.json(updatedToken);
-        } else {
-          res.status(404).json({ error: 'Token not found' });
-        }
+
+
       } catch (error) {
         res.status(500).json({ error: 'An error occurred' });
       }
@@ -127,6 +141,7 @@ export const requestedCampaigns = async (req, res) => {
       res.status(404).send({ message: "token Not Found" });
     }
 }
+
   export const campaignResult = async(red,res) => {
     
     io.on("connection",async socket => {
@@ -199,3 +214,114 @@ export const requestedCampaigns = async (req, res) => {
 
    
   }
+
+
+export const campaignDetails = async (req, res) => {
+  const { authorization } = req.headers;
+  const accessToken = authorization && authorization.split(' ')[1];  
+  try {
+    const user = await User.findOne({ accessToken: accessToken });
+    const tokens = await Token.findOne({ companyAccount: user.address });
+    const buytokens = await Buytoken.find({ tokenName: tokens.tokenName, status: 'accepted' });
+    const investorsCount = tokens.investorCount;
+    const amount = tokens.amount;
+    
+    let totalRaised = 0; 
+    for (const buytoken of buytokens) {
+      totalRaised += parseFloat(buytoken.amount);
+        }
+    
+    const percentageofcompletation = (totalRaised / amount)*100;
+    const endDateTimestamp = tokens.endDate;
+    const duration = tokens.duration;
+    const today = new Date();
+    let timetocompletation = 0;
+    let percentageoffinish = 0;
+
+    if (today < endDateTimestamp) {
+      const timeDifference = endDateTimestamp - today;
+      timetocompletation =Math.round( timeDifference / (1000 * 60 * 60 * 24));
+      percentageoffinish = (1 - (timetocompletation / tokens.duration)) * 100;
+    }
+    
+    res.json([{
+      investorsCount,
+      amount,
+      totalRaised,
+      percentageofcompletation,
+      timetocompletation,
+      percentageoffinish,
+      duration
+    }]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+}
+ export const campaignInvestIn = async (req,res)=>{
+  const { authorization } = req.headers;
+  const accessToken = authorization && authorization.split(' ')[1];  
+  try {
+    const user = await User.findOne({ accessToken: accessToken });
+    const buytokens = await Buytoken.find({ email: user.email });
+    const tokenData = buytokens.map(token => ({
+      tokenName:token.tokenName,
+      amount:token.amount,
+      quantity: token.quantity,
+      status:token.status,
+      Date:token.Date
+    }))
+	  res.json(tokenData);
+
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred' });
+  }
+ }
+
+ export const rejectionDetails= async(req,res)=>{
+  try{
+      const company = await User.findById(req.user._id);
+      
+      const companyAccount = company.address;
+
+      const rejectionData = await Token.find({companyAccount:companyAccount});
+      res.status(200).json(rejectionData);
+
+  
+  } catch (error) {
+        console.error('Error retrieving campaign details:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    };
+
+    export const addFeedback= async(req,res)=>{
+      const {subject,message,name} = req.body;
+
+      try{
+        const user = await User.findById(req.user._id);
+        const tokens = await Token.findOne({ companyAccount: user.address });
+
+        const feedback ={
+        name:user.userName,
+        email:user.email,
+        subject:subject,
+        message:message,
+        usernameofrejector:name,
+        tokenId:tokens._id
+      }
+
+      const newfeedback = await Feedback.create(feedback);
+      res.json(newfeedback);
+      }
+      catch (error) {
+        console.error('Error saving feedback :', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+
+
+
+    }
+
+

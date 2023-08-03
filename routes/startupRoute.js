@@ -1,14 +1,20 @@
 import express from 'express';
-const fundDemandRouter = express.Router();
+const startupRouter = express.Router();
+import User from "../models/User.js";
 
 import fs from 'fs';
-import Demand from '../models/Demand.js';
+import startupDemand from '../models/StartupDemand.js';
 
-fundDemandRouter.post('/depositdemand', async (req,res) => {
-  const new_Demand = new Demand({
-        company_name: req.body.company_name,
-        company_email: req.body.company_email ,
-        company_website:req.body.company_website,
+startupRouter.post('/depositdemand', async (req,res) => {
+  const { authorization } = req.headers;
+  const accessToken = authorization && authorization.split(' ')[1];
+  const user = await User.findOne({ accessToken: accessToken });
+  console.log(user.id)
+  console.log(req.body)
+  const new_Demand = new startupDemand({
+        company_name: req.body.companyName,
+        company_email: req.body.companyEmail ,
+        company_website:req.body.companyWebsite,
         country: req.body.country,
         state_of_funding: req.body.state_of_funding,
         activity_sector:req.body.activity_sector,
@@ -16,8 +22,9 @@ fundDemandRouter.post('/depositdemand', async (req,res) => {
         pitch_video:'pitch_video' in req.files ? req.files.pitch_video.name : 'No file chosen',
         legal_status:'legal_status' in req.files ? req.files.legal_status.name : 'No file chosen',
         business_registration_number : 'business_registration_number' in req.files ? req.files.business_registration_number.name : 'No file chosen',
-        member_occupation: req.body.member_occupation,
-        member_surname:req.body.member_surname,
+        member_name : req.body.memberName,
+        member_occupation: req.body.memberOccupation,
+        member_surname:req.body.memberSurname,
         member_cv: 'member_cv' in req.files ? req.files.member_cv.name : 'No file chosen',
         business_plan: 'business_plan' in req.files ? req.files.business_plan.name : 'No file chosen',
         market_analysis: 'market_analysis' in req.files ? req.files.market_analysis.name : 'No file chosen',
@@ -28,11 +35,10 @@ fundDemandRouter.post('/depositdemand', async (req,res) => {
         additional_information: 'additional_information' in req.files ? req.files.additional_information.name : 'No file chosen'
   })
   try {
-          const User_Number = Math.floor(Math.random()*100000)
-          const mainDirPath = `./demands/User-${User_Number}/`
+          const mainDirPath = `./startupDemands/Startup-${user.id}/`
           try {
-              if (!fs.existsSync('./demands')) {
-              fs.mkdirSync('./demands');
+              if (!fs.existsSync('./startupDemands')) {
+              fs.mkdirSync('./startupDemands');
               }
               if (!fs.existsSync(mainDirPath)) {
               fs.mkdirSync(mainDirPath);
@@ -58,9 +64,9 @@ fundDemandRouter.post('/depositdemand', async (req,res) => {
  }
 )
 
-fundDemandRouter.get('/', (req,res) => {
+startupRouter.get('/', (req,res) => {
   res.send("fundraising route");
 }
 )
 
-export default fundDemandRouter
+export default startupRouter

@@ -99,6 +99,7 @@ const userSchema = new mongoose.Schema({
     },
     socketIds: [{ type: String }],
 
+
 });
 
 // fire a hash function for password before save

@@ -16,7 +16,6 @@ import bodyParser from 'body-parser';
 import { campaignExpirationAlert, onConnection } from './utils/buildNotif.js';
 import notificationfRouter from './routes/notificationRoutes.js';
 import campaignRouter from './routes/campaignRoutes.js';
-import fundDemandRouter from './routes/userRoute.js';
 import upload  from 'express-fileupload';
 import buytokenRouter from './routes/buytokenRoutes.js';
 import tokenRouter from './routes/tokenRoutes.js';
@@ -26,6 +25,9 @@ import Token from './models/Token.js';
 import Buytoken from './models/Buytoken.js';
 import { sendEmail } from './utils/sendEmails.js';
 import User from './models/User.js';
+import startupRouter from './routes/startupRoute.js';
+import investorRouter from './routes/investorRoute.js';
+
 const app = express();
 dotenv.config();
 
@@ -54,7 +56,8 @@ app.use('/api/auth',authRouter);
 app.use('/api/users',requireAuth,isAdmin,userRouter)//,requireAuth,isAdmin
 app.use('/api/users',requireAuth,notificationfRouter);
 app.use('/api/seed', seedRouter);
-app.use('/api/demands',requireAuth,fundDemandRouter);
+app.use('/api/startup/demands',requireAuth,startupRouter);
+app.use('/api/investor/demands',requireAuth,investorRouter);
 app.use('/api/campaign',requireAuth,campaignRouter);
 app.use('/api/buy',requireAuth,buytokenRouter);
 app.use('/api/token',requireAuth,tokenRouter);

@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import Web3 from 'web3';
 import express from 'express';
 import {sendEmail} from "../utils/sendEmails.js";
+import Feedback from "../models/Feedback.js";
 
 import dotenv from "dotenv";
 const web3 =new Web3(new Web3.providers.HttpProvider("http://blockchain.docker.local"));
@@ -987,7 +988,8 @@ export const alldemand = async(req,res) =>{
             quantity:demand.quantity,
             paymentMethod:demand.paymentMethod,
             tokenName:demand.tokenName,
-            status:demand.status
+            status:demand.status,
+			amount:demand.amount
           }));
           res.json(demandData);
         } catch (error) {
@@ -1053,14 +1055,6 @@ export const accepttransfer = async(req,res) =>{
 	const from = tokenopp.address ;
 	const to = buyer.address;
 	const amount = demand.quantity;
-	console.log(id);
-	console.log(tokenopp);
-	console.log(demand);
-	console.log(token);
-	console.log(buyer);
-	console.log(from);
-	console.log(to);
-	console.log(amount);
 
 
 	try{
@@ -1126,5 +1120,91 @@ export const allbuytoken= async (req, res) => {
 	}
   };
     
+//   export const rejectTransfer = async (req,res)=>{
+//     try {
+//         const {id} = req.params;
+// 		const demand = await Buytoken.findById(id);
+//         if (demand.status === 'pending') {
+//             await Buytoken.findByIdAndUpdate(id,{status:"rejected"}, { new: true });
+//             res.send("Buy Token had been rejected");
+//         }
+//     } catch (error) {
+//         console.log(error);
+//     }
+// }
+
+export const rejectTransfer = async (req, res) => {
+    const {motifRejection} = req.body;
+
+    try {
+        const tokenId = req.params.id;
+        const rejectDate = new Date();
+		const demand = await Buytoken.findById(tokenId);
+        const tokenopp = await User.findById(req.user._id);
+        const tokenUpdate ={
+          status:"rejected",
+          rejectDate:rejectDate,
+          rejectedBy:tokenopp.userName,
+          motifRejection:motifRejection
+
+      }
+
+        const updatedToken = await Buytoken.findByIdAndUpdate(tokenId, tokenUpdate, { new: true });
+    
+          res.json(updatedToken);
+
+      } catch (error) {
+        res.status(500).json({ error: 'An error occurred' });
+      }
+  };
+  export const getBuyTokenById = async (req,res) => {
+    const { id } = req.params;
+	const buytoken = await Buytoken.findById(id);
+    if (buytoken) {
+      res.json(buytoken);
+    } else {
+      res.status(404).send({ message: "buy token demand Not Found" });
+    }
+}
+export const rejectionDetails= async(req,res)=>{
+	try{
+		const company = await User.findById(req.user._id);
+		
+		const companyAccount = company.email;
+  
+		const rejectionData = await Buytoken.find({email:companyAccount,status:'rejected'});
+		res.status(200).json(rejectionData);
+  
+	
+	} catch (error) {
+		  console.error('Error retrieving campaign details:', error);
+		  res.status(500).json({ error: 'Internal Server Error' });
+		}
+	  };
+
+	  export const addFeedback= async(req,res)=>{
+		const {subject,message,name} = req.body;
+  
+		try{
+		  const user = await User.findById(req.user._id);
+		  const tokens = await Buytoken.findOne({ email: user.email });
+  
+		  const feedback ={
+		  name:user.userName,
+		  email:user.email,
+		  subject:subject,
+		  message:message,
+		  usernameofrejector:name,
+		  tokenName:tokens.tokenName
+		}
+  
+		const newfeedback = await Feedback.create(feedback);
+		res.json(newfeedback);
+		}
+		catch (error) {
+		  console.error('Error saving feedback :', error);
+		  res.status(500).json({ error: 'Internal Server Error' });
+		}
+	  }
 
 

@@ -48,6 +48,20 @@ const buytokenSchema = new mongoose.Schema({
         // required:[true,"please enter a valide date"],
         default:'',
     },
+    motifRejection:{
+        type:String,
+        default:''
+    },
+    rejectedBy:{
+        type:String,
+        default:''
+    },
+    rejectDate:{
+        type:Date,
+        // required:[true,"please enter a valide date"],
+        default:'',
+
+    }
 
 })
 const Buytoken = mongoose.model('Buytoken',buytokenSchema);

@@ -126,7 +126,18 @@ const tokenSchema = new mongoose.Schema({
     investorCount:{
         type:Number,
         default:0,
+    },
+    rejectedBy:{
+        type:String,
+        default:''
+    },
+    rejectDate:{
+        type:Date,
+        // required:[true,"please enter a valide date"],
+        default:'',
+
     }
+
 })
 const Token = mongoose.model('token',tokenSchema);
 

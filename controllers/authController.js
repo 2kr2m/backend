@@ -190,6 +190,7 @@ export const login_post= async (req,res)=>{
       const auth = await bcrypt.compare(password,user.password);
       if (user.isDeleted <= 0) {
         let jwt = createToken(user);
+        req.headers.authorization = `Bearer ${jwt}`;
         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
         if (user.address==''){
           const address =  await web3.eth.personal.newAccount(password);

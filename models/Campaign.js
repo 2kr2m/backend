@@ -8,19 +8,44 @@ const campaignSchema = new mongoose.Schema({
         type: String,
         default: bcrypt.hashSync(Date.now().toString(),salt)
     },
-    createdAt:{
-      type: Date,
-    },
-    ownerId:{
+    companyId:{
         type: String,
-
+    },
+    tokenId:{
+        type: String,
+    },
+    createdAt:{
+        type: Date,
     },
     duration:{
         type : Number,
         required: [true, 'this field is mandatory']
+
     },
     expirationDate:{
         type: Date,
+        
+    },
+    label:{
+        type:String,
+        enum:["round 1","round 2"],
+        default: 'round 1'  
+    },
+    tokenQuantity:{
+        type:Number,
+    },
+    extentionDuration:{
+        type:Number,
+        default:0
+    },
+    status:{
+        type: String,
+        enum:["started","ended","running","extended"],
+        default: 'started'  
+    },
+    successStatus:{
+        type: Number,
+        default: 2 
     }
 });
 

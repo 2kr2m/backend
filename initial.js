@@ -18,7 +18,14 @@ import notificationfRouter from './routes/notificationRoutes.js';
 import campaignRouter from './routes/campaignRoutes.js';
 import fundDemandRouter from './routes/userRoute.js';
 import upload  from 'express-fileupload';
-
+import buytokenRouter from './routes/buytokenRoutes.js';
+import tokenRouter from './routes/tokenRoutes.js';
+import { campaignResult } from './controllers/campaignController.js';
+import Campaign from './models/Campaign.js';
+import Token from './models/Token.js';
+import Buytoken from './models/Buytoken.js';
+import { sendEmail } from './utils/sendEmails.js';
+import User from './models/User.js';
 const app = express();
 dotenv.config();
 
@@ -49,6 +56,8 @@ app.use('/api/users',requireAuth,notificationfRouter);
 app.use('/api/seed', seedRouter);
 app.use('/api/demands',requireAuth,fundDemandRouter);
 app.use('/api/campaign',requireAuth,campaignRouter);
+app.use('/api/buy',requireAuth,buytokenRouter);
+app.use('/api/token',requireAuth,tokenRouter);
 app.get("/home",requireAuth,async (req,res)=>{
   const user = req.user;
   campaignExpirationAlert(user);
@@ -64,5 +73,9 @@ const io = new SocketIO(server, {
 }
 );
 
-server.listen(port,()=>console.log(`Backend server is running on ${port}`));
+server.listen(port,()=>{
+  campaignResult();
+  console.log(`Backend server is running on ${port}`)
+
+});
 export default io;

@@ -1,6 +1,6 @@
 import express from 'express';
 
-import {signup_get,signup_post,login_get,login_post, logout,resetPass1_post,resetPass2_post, verif_get, enableFA,verifyTwoFactorCode, generateTwoFactorSecret_get, getuser} from "../controllers/authController.js";
+import {signup_get,signup_post,login_get,login_post, logout,resetPass1_post,resetPass2_post, verif_get, enableFA,verifyTwoFactorCode, generateTwoFactorSecret_get, getuser, modifyuser, setuser, changeemail, changepassword} from "../controllers/authController.js";
 
 const authRouter = express.Router();
 
@@ -17,6 +17,9 @@ authRouter.get('/generateTwoFactorSecret',generateTwoFactorSecret_get);
 // authRouter.post('/generate-two-factor-secret', generateTwoFactorSecret);
 authRouter.post('/verify-two-factor-code', verifyTwoFactorCode);
 authRouter.get("/logout",logout);
-authRouter.get("/get-user",getuser)
-
+authRouter.get("/get-user",getuser);
+authRouter.post("/modifyuser",modifyuser);
+authRouter.get("/setuser",setuser);
+authRouter.post("/changeemail",changeemail);
+authRouter.post("/changepassword",changepassword);
 export default authRouter;

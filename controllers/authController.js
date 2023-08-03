@@ -113,8 +113,8 @@ export const verif_get = async (req,res)=>{
 //resend verification
 //     export const resendverif_get = async (req,res)=>{
 //         try {
-//             const link = `${process.env.BASE_URL_AUTH}/verif/${req.params.id}/${token}`;
-//             await sendEmail(createdUser.email, "Password reset", `Thank you for your registration,please click on this link to verify your account ${link}`);
+//             const link = ${process.env.BASE_URL_AUTH}/verif/${req.params.id}/${token};
+//             await sendEmail(createdUser.email, "Password reset", Thank you for your registration,please click on this link to verify your account ${link});
 //         } catch (error) {
             
 //         }    
@@ -129,7 +129,7 @@ export const verif_get = async (req,res)=>{
     
 //      if (user.verified==0) {
     
-//      sendEmail(user.email, 'Verify Your Account', `${process.env.BASE_URL_AUTH}/verif/${createdUser._id}`);
+//      sendEmail(user.email, 'Verify Your Account', ${process.env.BASE_URL_AUTH}/verif/${createdUser._id});
     
 //      return res.status(200).send('Email verification resend');
     
@@ -168,7 +168,7 @@ export const signup_post= async (req,res)=>{
         let accessToken = createToken(createdUser._id);
         res.cookie('jwt',accessToken,{httpOnly:true,maxAge:maxAge*1000});
         const link = `${process.env.BASE_URL_AUTH}/verif/${createdUser._id}/${accessToken}`;
-        await sendEmail(createdUser.email,createdUser.userName, "Email Activation", `<h3>Click the link below to activate your email.</h3><p>${link}</p> `);
+        await sendEmail(createdUser.email,createdUser.userName, "Email Activation", `<h3>Click the link below to activate your email.</h3><p>${link}</p>` );
         res.status(201).json(`data:${accessToken}`);
 
     } catch (err) {
@@ -181,47 +181,99 @@ export const login_get=(req,res)=>{
     res.send('<h2>this is login page</h2>');
 }
 
+
 export const login_post= async (req,res)=>{
-    const {email,password} = req.body;
-    try {
-        // const user = await User.login(email,password);
-        const user = await User.findOne({email: email});
-        const auth = await bcrypt.compare(password,user.password);
+  const {email,password} = req.body;
+  try {
+      // const user = await User.login(email,password);
+      const user = await User.findOne({email: email});
+      const auth = await bcrypt.compare(password,user.password);
+      if (user.isDeleted <= 0) {
         let jwt = createToken(user);
+        req.headers.authorization = `Bearer ${jwt}`;
         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
-      if (user.address==''){
-        const address =  await web3.eth.personal.newAccount(password);
-        user.address = address;
-      onConnection(user,address);
-      }
+        if (user.address==''){
+          const address =  await web3.eth.personal.newAccount(password);
+          user.address = address;
+          onConnection(user,address);
+        }
       
         user.accessToken = jwt;
         await User.findOneAndUpdate(user._id ,user);
-        if (user.verified==0){
-            res.status(400).send('Please Verify your Account to Login');
+        if (user.verified==0 ){
+              res.status(400).send('Please Verify your Account to Login');
             
         }
           
         else if (!auth){
-           res.status(400).send('fail');
-    }
+             res.status(400).send('fail');
+        }
        
         else if (user.twoFactorEnabled==1){
-                await generateTwoFactorSecret(user.email,user.userName);
-                res.send(user);
+                  await generateTwoFactorSecret(user.email,user.userName);
+                  res.send(user);
 
-        }
+          }
         else { 
-            res.status(200).send(user);
-            console.log(password,user.password);
-        }
+              res.status(200).send(user);
+            
+          }
+      } else {
+        console.log('isDeleted')
+        res.status(400).send('there is no user with credentials');
+      }
+
+
+
+  } catch (error) {
+      const errors = handleErrors(error);
+      res.status(400).json(errors);
+  }
+}
+
+
+
+// export const login_post= async (req,res)=>{
+//     const {email,password} = req.body;
+//     try {
+//         // const user = await User.login(email,password);
+//         const user = await User.findOne({email: email});
+//         const auth = await bcrypt.compare(password,user.password);
+//         let jwt = createToken(user);
+//         res.cookie('jwt',jwt,{httpOnly:true,maxAge:maxAge*1000});
+//       if (user.address==''){
+//         const address =  await web3.eth.personal.newAccount(password);
+//         user.address = address;
+//       onConnection(user,address);
+//       }
+      
+//         user.accessToken = jwt;
+//         await User.findOneAndUpdate(user._id ,user);
+//         if (user.verified==0){
+//             res.status(400).send('Please Verify your Account to Login');
+            
+//         }
+          
+//         else if (!auth){
+//            res.status(400).send('fail');
+//     }
+       
+//         else if (user.twoFactorEnabled==1){
+//                 await generateTwoFactorSecret(user.email,user.userName);
+//                 res.send(user);
+
+//         }
+//         else { 
+//             res.status(200).send(user);
+//             console.log(password,user.password);
+//         }
 
  
-    } catch (error) {
-        const errors = handleErrors(error);
-        res.status(400).json(errors);
-    }
-}
+//     } catch (error) {
+//         const errors = handleErrors(error);
+//         res.status(400).json(errors);
+//     }
+// }
 
 //send email to reset password
 export const resetPass1_post = async (req,res)=>{
@@ -267,9 +319,11 @@ export const resetPass2_post = async (req,res)=>{
 
 //2FA Enable
 export const enableFA = async (req,res)=>{
-    const {email}=req.body
-    try {
-      const user = await  User.findOne({ email: email});
+  const { authorization } = req.headers;
+  const accessToken = authorization && authorization.split(' ')[1];  
+  try {
+
+      const user = await User.findOne({ accessToken: accessToken }); 
       if (user.verified == 0 ) {
         res.status(400).send('Please Verify your Account to enable 2FA');
       }
@@ -278,7 +332,7 @@ export const enableFA = async (req,res)=>{
       }
       user.twoFactorEnabled = 1 ;
       await User.findOneAndUpdate(user._id ,user);
-      res.status(200).send("2FA is enabled");
+      res.status(200).send(user);
       }
       catch (error) {
         const errors = handleErrors(error);
@@ -393,5 +447,98 @@ export const getuser = async (req,res) => {
     res.status(401).send({ message: "Unauthorized" });
   }
 };
+
+export const modifyuser = async (req,res)=>{
+  try{
+    const {firstName, lastName,phone,localisation,paymentMethod,rib}=req.body;
+    const { authorization } = req.headers;
+    const accessToken = authorization && authorization.split(' ')[1];
+    const user = await User.findOne({ accessToken: accessToken });
+    user.firstName=firstName;
+    user.lastName= lastName;
+    user.phone=phone;
+    user.localisation=localisation;
+    user.paymentMethod= paymentMethod;
+    user.rib=rib;
+  await User.findOneAndUpdate(user._id ,user);
+  res.status(200).send(user);
+  }
+  catch (error) {
+    const errors = handleErrors(error);
+    res.status(400).json(errors);
+  }
+}
+export const setuser = async (req,res) => {
+  const { authorization } = req.headers;
+  const accessToken = authorization && authorization.split(' ')[1];
+
+  if (accessToken) {
+    const user = await User.find({ accessToken: accessToken }); // Use an object with accessToken property
+    if (user) {
+      res.send(user);
+      console.log(user);
+    } else {
+      res.status(404).send({ message: "User Not Found" });
+    }
+  } else {
+    res.status(401).send({ message: "Unauthorized" });
+  }
+};
+
+export const changeemail= async (req,res)=>{
+  try{
+    const {newemail,password}= req.body;
+    const { authorization } = req.headers;
+    const accessToken = authorization && authorization.split(' ')[1];
+    const user = await User.findOne({ accessToken: accessToken }); 
+    const userpassword = user.password;
+    const auth = await bcrypt.compare(password,userpassword);
+    console.log(userpassword);
+    console.log(user);
+    console.log(auth);
+    if(!auth){
+
+      res.status(404).send({ message: "fail" });
+    }
+    else{
+
+      user.email=newemail;
+      await User.findOneAndUpdate(user._id ,user);
+      res.status(200).send(user);
+    }
+    res.status(200).send(user);
+
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send('Error submitting data');}
+}
+
+
+export const changepassword= async (req,res)=>{
+  try{
+    const {currentpassword,newpassword,confirmnewpassword}= req.body;
+    const { authorization } = req.headers;
+    const accessToken = authorization && authorization.split(' ')[1];
+    const user = await User.findOne({ accessToken: accessToken }); 
+    const auth = await bcrypt.compare(currentpassword,user.password);
+
+    if(auth && (newpassword == confirmnewpassword)){
+      user.password=newpassword;
+      await user.save();
+      res.status(200).send(user);
+
+    }
+    else{
+      res.status(404).send({ message: "fail" });
+    }
+    res.send(user);
+
+  }
+  catch (error) {
+    const errors = handleErrors(error);
+    res.status(400).json(errors);
+}
+}
 
 // module.exports = signup_get ;

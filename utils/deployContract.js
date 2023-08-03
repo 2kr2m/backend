@@ -6,9 +6,9 @@ import express from 'express';
 import dotenv from "dotenv";
 import moment from 'moment';
 import Token from '../models/Token.js';
+import Buytoken from "../models/Buytoken.js";
 import User from '../models/User.js';
 dotenv.config();
-const contractRouter = express.Router()
 
 const blockchainURI=process.env.BOCKCHAIN_URI;
 // console.log(blockchainURI);
@@ -977,311 +977,74 @@ const handleErrors = (err)=>{
             errors[properties.path]=properties.message;
         });
     }
-    return errors;
-
-};
-contractRouter.post('/deploy', async (req, res) => {
-  try {
-    // // Retrieve constructor parameter(s) from the request body
-    const { password,param1, param2, param3, param4 } = req.body;
-    // const contractCode = fs.readFileSync("1_PMEAssetToken.sol", 'utf8');
-
-    // // Compile the contract
-    // const compiledContract = solc.compile(contractCode);
-
-    // // Retrieve the compiled contract bytecode and ABI
-    // const bytecode = compiledContract.contracts['1_PMEAssetToken'].bytecode;
-    // const abi = JSON.parse(compiledContract.contracts['1_PMEAssetToken'].interface);
-    // Compile and deploy the contract
-    // const contractJSON = require('./Contract.json'); // Replace with your contract's JSON file
-    const contract = new web3.eth.Contract(abi);
-
-    const deployTransaction = contract.deploy({
-      data: bytecode,
-      arguments: [param1, param2, param3, param4] // Pass constructor parameters here
-    });
-
-    const accounts = await web3.eth.getAccounts();
-    await web3.eth.personal.unlockAccount(accounts[0], password , 1600);
-
-    const deployReceipt = await deployTransaction.send({
-      from: accounts[0], // Update with the desired deployer account
-      gas: 2000000 // Adjust the gas limit as per your contract's requirements
-    });
-
-    const contractAddress = deployReceipt.options.address;
-    res.json({ contractAddress });
-  } catch (error) {
-    console.error('Error deploying contract:', error);
-    res.status(500).json({ error: 'Failed to deploy contract' });
-  }
-});
-
-
-// //Deploy Contract
-// export const deploySmartContract = async (passAdmin,adminAddress,token) => {
-
-// 	// Get the available accounts from the Ethereum node
-// 	const accounts = await web3.eth.getAccounts();
-  
-// 	// Check if the provided account exists in the available accounts
-// 	const selectedAccount = accounts.find((acc) => acc === adminAddress);
-  
-// 	if (selectedAccount) {
-// 	  try {
-		
-// 		const contract = new web3.eth.Contract(abi);
-
-//         const startDat= new Date(token.startDate).getTime();
-// 		const endDat= new Date(token.endDate).getTime();
-
-// 		// Unlock the account before deploying the contract
-// 		await web3.eth.personal.unlockAccount(adminAddress, passAdmin, 1600);
-  
-// 		// Deploy the contract with the provided bytecode and constructor arguments
-// 		const deployment = contract.deploy({
-// 		  data: bytecode,
-// 		  arguments: [token.tokenName, token.tokenSymbol, token.tokenTotalSupply, token.tokenPrice, token.companyAccount, adminAddress , startDat, endDat, token.RedemptionType,token.yieldValue , token.actionType], // Pass constructor parameters here
-// 		});
-  
-// 		// Send the deployment transaction
-// 		const deploymentTransaction = deployment.send({
-// 		  from: adminAddress,
-// 		  gas: 10000000,
-// 		  gasPrice: 0,
-// 		}).on('receipt', async (receipt) =>{
-// 			const contractAddress =receipt.contractAddress;
-// 			const Hash =receipt.transactionHash;
-// 			(async () => {
-// 				await Token.findOneAndUpdate(
-// 				  { tokenName: token.tokenName },
-// 				  { contractAddress, transactionHash:Hash },
-// 				  { new: true }
-// 				);
-// 			  })();
-// 		   });
-  
-// 	  } catch (err) {
-// 		console.error('error deploying smart contract  ',err);
-// 	  }
-// 	} else {
-// 		throw new Error("Something went wrong !!");
-// 	}
-//   };
-
-  
-//Deploy Contract
-export const deploySmartContract = async (passAdmin,adminAddress,token) => {
-
-	// Get the available accounts from the Ethereum node
-	const accounts = await web3.eth.getAccounts();
-  
-	// Check if the provided account exists in the available accounts
-	const selectedAccount = accounts.find((acc) => acc === adminAddress);
-  
-	if (selectedAccount) {
-	  try {
-		
-		const contract = new web3.eth.Contract(abi);
-
-        const startDat= new Date(token.startDate).getTime();
-		const endDat= new Date(token.endDate).getTime();
-
-		// Unlock the account before deploying the contract
-		await web3.eth.personal.unlockAccount(adminAddress, passAdmin, 1600);
-  
-		// Deploy the contract with the provided bytecode and constructor arguments
-		const deployment = contract.deploy({
-		  data: bytecode,
-		  arguments: [token.tokenName, token.tokenSymbol, token.tokenTotalSupply, token.tokenPrice, token.companyAccount, adminAddress , startDat, endDat, token.RedemptionType,token.yieldValue , token.actionType], // Pass constructor parameters here
-		});
-  
-		// Send the deployment transaction
-		await deployment.send({
-		  from: adminAddress,
-		  gas: 10000000,
-		  gasPrice: 0,
-		}).on('receipt', async (receipt) =>{
-			const contractAddress =receipt.contractAddress;
-			const Hash =receipt.transactionHash;
-			await Token.findByIdAndUpdate(
-				token._id,
-				{ contractAddress, transactionHash: Hash },
-				{ new: true }
-			  );
-		   });
-  
-	  } catch (err) {
-		console.error('error deploying smart contract  ',err);
-	  }
-	} else {
-		throw new Error("Something went wrong !!");
-	}
-  };
+    return errors;}
 
 
 
 
- contractRouter.get('/token', async (req, res) => {
-	try {
-		const { tokenName } = req.body;
-		const token = await Token.findOne({tokenName:tokenName});
-	// 	const contract = new web3.eth.Contract(abi, token.contractAddress);
-	// 	// const accounts = await web3.eth.getAccounts();
-
-	//   const getMaxInvest = await contract.methods.getMaxInvest().call();
-	//   const getMinInvest = await contract.methods.getMinInvest().call();
-
-	//   const MaxInvest= JSON.parse(JSON.stringify(getMaxInvest, (_, value) => typeof value === 'bigint' ? value.toString() : value));
-	//   const MinInvest= JSON.parse(JSON.stringify(getMinInvest, (_, value) => typeof value === 'bigint' ? value.toString() : value));
-	  res.json({
-		tokenName:token.tokenName,
-		tokenPrice:token.tokenPrice,
-		tokenSymbol:token.tokenSymbol,
-		MinInvest:token.minInvest,
-		MaxInvest:token.maxInvest,
-		startDate:token.startDate,
-		endDate:token.endDate,
-		remainTokens : token.remainToken,
-		RedemptionType:token.RedemptionType ,
-		yieldValue:token.yieldValue,
-		actionType:token.actionType
-	  });
-	} catch (error) {
-	  console.error('Error retrieving token details:', error);
-	  res.status(500).json({ error: 'Internal Server Error' });
-	}
-  });
-
-contractRouter.get('/balance', async (req, res) => {
-	try {
-	  const { contractAddress , address } = req.body;
-  
-	  // Retrieve the contract address from your token contract deployment
-  
-	  // Load the token contract using the contract address and ABI
-	  const contract = new web3.eth.Contract(abi, contractAddress);
-  
-	  // Call the balanceOf method on the contract to get the token balance of the address
-	  const balance = await contract.methods.balanceOf(address).call();
-	  const revenueShare = await contract.methods.revenueShare(address).call();
-	  const debtBalance = await contract.methods.debtBalance(address).call();
-	  const dividendBalance = await contract.methods.dividendBalance(address).call();
-  
-	  const balanceString = balance.toString();
-	  const revenueShareString = revenueShare.toString();
-	  const debtBalanceString = debtBalance.toString();
-	  const dividendBalanceString = dividendBalance.toString();
-
-	  // Return the balance as the response
-	  res.json({ 
-		balance: balanceString , 
-		revenueShare: revenueShareString ,
-		debtBalance: debtBalanceString , 
-		dividendBalance : dividendBalanceString 
-		});
-
-	} catch (error) {
-	  console.error(error);
-	  res.status(500).json({ error: 'An error occurred while retrieving the token balance' });
-	}
-  });
-  contractRouter.get('/alltoken', async (req, res) => {
-	try {
-	  const tokens = await Token.find({status:"Approved"}); // Retrieve all tokens from the database
-  
-	  // Map the tokens to a new array containing only the necessary information
-	  const tokenData = tokens.map(token => ({
-		tokenName: token.tokenName,
-		tokenPrice: token.tokenPrice,
-		tokenSymbol: token.tokenSymbol,
-		minInvest: token.minInvest,
-		maxInvest: token.maxInvest,
-		startDate: token.startDate,
-		endDate: token.endDate,
-		remainTokens: token.remainToken,
-		// redemptionType: token.redemptionType,
-		yieldValue: token.yieldValue,
-		actionType: token.actionType
-	  }));
-  
-	  res.json(tokenData);
-	} catch (error) {
-	  console.error('Error retrieving token details:', error);
-	  res.status(500).json({ error: 'Internal Server Error' });
-	}
-  });
-
-contractRouter.post('/transfer', async (req, res) => {
-	try {
-	  const { tokenName,from, to, amount } = req.body;
-	  const token = await Token.findOne({tokenName:tokenName});
-	  const tokenContract = new web3.eth.Contract(abi, token.contractAddress);
-	  const transfer = await tokenContract.methods.transfer(to, amount).send({ from });
-	  token.remainToken = token.remainToken - amount;
-	  token.maxInvest = token.remainToken * token.tokenPrice;
-	  token.transactionHash.push(transfer.transactionHash);
-	  await Token.findOneAndUpdate(token._id,token);
-	  res.json({ transactionHash: transfer.transactionHash });
-
-	} catch (error) {
-	  res.status(500).json({ error: 'Token transfer failed.' });
-	}
-  });
-
-//create new account
-contractRouter.post("/createAccount", async (req, res) => {
-	const { password } = req.body;
-  
-	try {
-	  const result = await web3.eth.personal.newAccount(password);
-	  res.status(201).json(result);
-	} catch (err) {
-	  console.error(err);
-	  res.status(500).send('Error creating account');
-	}
-  });
-  
-
-//Get transaction details
-contractRouter.get("/trxDetails", async (req, res) => {
-	const { hash } = req.body;
-  
-	try {
-	  const transactionReceipt = await web3.eth.getTransaction(hash);
-	  const serializedTransactionReceipt = JSON.stringify(transactionReceipt, (key, value) =>
-		typeof value === 'bigint' ? value.toString() : value
-	  );
-  
-	  res.status(201).json({
-		transactionReceipt: JSON.parse(serializedTransactionReceipt)
-	  });
-	} catch (err) {
-	  console.error(err);
-	  res.status(500).send('Error retrieving the transaction data');
-	}
-  });
-  
-  
-//get list accounts
-contractRouter.get('/getListAccounts', async (req, res) => {
-     try {
-       const accounts = await web3.eth.getAccounts();
-       const accountBalances = await Promise.all(accounts.map(async (account) => {
-          const balance = await web3.eth.getBalance(account);
-          const balanceInEth = web3.utils.fromWei(balance, 'ether');
-          return {
-            account,
-            balance: balanceInEth
-          };
-        }));
-       res.status(200).json(accountBalances);
-    } catch (err) {
-       console.error(err);
-       res.status(500).send('Error getting accounts list');
-      }});
-
-
-
-
-export default contractRouter;
+    export const deployContract = async (account, password, token) => {
+        const accounts = await web3.eth.getAccounts();
+      
+        // Check if the provided account exists in the available accounts
+        const selectedAccount = accounts.find((acc) => acc === account);
+      
+        if (selectedAccount) {
+          try {
+            const contract = new web3.eth.Contract(abi);
+      
+            const startDat = new Date(token.startDate).getTime();
+            const endDat = new Date(token.endDate).getTime();
+      console.log(startDat);
+      console.log(endDat);
+      console.log(token.yieldValue);
+      console.log(token.tokenPrice);
+      console.log(token.tokenTotalSupply);
+            // Unlock the account before deploying the contract
+            await web3.eth.personal.unlockAccount(account, password, 1600);
+      
+            // Deploy the contract with the provided bytecode and constructor arguments
+            const deployment = contract.deploy({
+              data: bytecode,
+              arguments: [
+                token.tokenName,
+                token.tokenSymbol,
+                token.tokenTotalSupply,
+                token.tokenPrice,
+                token.companyAccount,
+                account,
+                startDat,
+                endDat,
+                token.RedemptionType,
+                token.yieldValue,
+                token.actionType
+              ],
+            });
+      
+            // Send the deployment transaction
+            const deploymentTransaction = deployment.send({
+              from: account,
+              gas: 10000000,
+              gasPrice: 0,
+            }).on('receipt', async (receipt) => {
+              const contractAddress = receipt.contractAddress;
+              const Hash = receipt.transactionHash;
+              (async () => {
+                await Token.findOneAndUpdate(
+                  { tokenName: token.tokenName },
+                  { contractAddress, transactionHash: Hash },
+                  { new: true }
+                );
+              })();
+      
+            });
+            await deploymentTransaction.catch((error) => {
+                console.error('Error deploying contract:', error);
+              });
+          } catch (err) {
+            console.error(err);
+          }
+        } else {
+          console.log('Account does not exist');
+        }
+      };
+      

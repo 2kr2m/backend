@@ -1,12 +1,12 @@
 import bcrypt from 'bcryptjs';
-
+export const passAdmin = 'token0PP2dmin';
 const data = {
   users: [
     {
         
       userName: 'Administrator',
       email: 'contact@tokenopp.io',
-      password: bcrypt.hashSync('token0PP2dmin'),
+      password: bcrypt.hashSync(passAdmin),
       userType:'admin',
       role: 'superadmin',
       createdBy: 0,

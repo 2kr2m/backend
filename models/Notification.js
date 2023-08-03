@@ -33,25 +33,37 @@ const notificationSchema = new mongoose.Schema({
         type: String,
         enum:['info','success','warning','error'],
         default: 'info'
+    },
+    isDeleted:{
+        type: Number,
+        default:0
+    },
+    shown:{
+        type : Number,
+        default: 0
     }
 });
 
 
-notificationSchema.post('save', async function(next) {
+notificationSchema.post('save', async function() {
     try {
-        const notId = this._id.toString();
-        const user = await User.findById(this.senderId.toString());
-        const sentNotifications = user.sentNotifications;
-        const updatedSender = await User.findOneAndUpdate(
-            { _id : this.senderId.toString() } ,
-            {
-              $set: {
-                sentNotifications: [...sentNotifications,notId],
-              }
-            },
-            { new: true }
-          );
-        console.log(updatedSender);
+        if(this.senderId !== ' '){
+            const notId = this._id.toString();
+            const user = await User.findById(this.senderId.toString());
+            const sentNotifications = user.sentNotifications;
+            const updatedSender = await User.findOneAndUpdate(
+                { _id : this.senderId.toString() } ,
+                {
+                  $set: {
+                    sentNotifications: [...sentNotifications,notId],
+                  }
+                },
+                { new: true }
+              );
+        }
+        
+
+        
     } catch (error) {
         console.log(error);
     }

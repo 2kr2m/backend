@@ -14,6 +14,31 @@ const userSchema = new mongoose.Schema({
         required:[true,"please enter a user name"],
         unique:true,
     },
+    firstName:{
+        type:String,
+        default:''
+    },
+    lastName:{
+        type:String,
+        default:''
+    },
+    phone:{
+        type:String,
+        default:''
+    },
+    rib:{
+        type:String,
+        default:''
+    },
+    localisation:{
+        type:String,
+        default:''
+    },
+    paymentMethod:{
+        type:String,
+        enum:['virement bancaire','crypto'],
+        default:'virement bancaire',
+    },
     email:{
         type:String,
         required:[true,"please enter an email"],
@@ -64,9 +89,15 @@ const userSchema = new mongoose.Schema({
         default:''
     },
     status:{
-        type: String,
-        default:'pending'
-    }
+        type:String,
+        enum:['pending','verified','rejected'],
+        default: 'pending'
+    },
+    isDeleted:{
+        type:Number,
+        default:0
+    },
+    socketIds: [{ type: String }],
 
 });
 

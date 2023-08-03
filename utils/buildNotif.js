@@ -24,7 +24,7 @@ export const onConnection = async (user,address)=>{
         notifPayload: `Welcome to T-Raise ! this is your address ${address} . Visit Settings to manage your notifications.`
     });    
     await notif.save();
-    const notifications = await Notification.find({receiptId:notif.receiptId});
+    const notifications = await Notification.find({receiptId:notif.receiptId , isDeleted : 0});
     io.on("connection", socket => {
         console.log('New client connected');
         socket.on('disconnect', () => {
@@ -50,7 +50,7 @@ export const statusUpdate = async(user)=>{
         notifPayload: "Congratulation ! , your account has been verified. You can now enjoy with all the T-Rex features. "
     });    
     await notif.save();
-    const notifications = await Notification.find({receiptId:notif.receiptId});
+    const notifications = await Notification.find({receiptId:notif.receiptId , isDeleted : 0});
     io.on("connection", socket => {
         console.log('New client connected');
        
@@ -66,14 +66,15 @@ export const statusUpdate = async(user)=>{
 
     });
 }
+
 export const notifStartCampaign = async (campaign)=>{
     const notif = new Notification({
-        receiptId : campaign.ownerId,
+        receiptId : campaign.companyId,
         notifTitle: "New Campaign",
         notifPayload: `Congratulation ! , you have successfully started your fund raising campaign valid until ${campaign.expirationDate} . Please check your campaign section for more details.`
     });    
     await notif.save();
-    const notifications = await Notification.find({receiptId:notif.receiptId});
+    const notifications = await Notification.find({receiptId:notif.receiptId , isDeleted : 0});
     io.on("connection", socket => {
         console.log('New client connected');
        
@@ -90,7 +91,7 @@ export const notifStartCampaign = async (campaign)=>{
     });
 } 
 export const campaignExpirationAlert = async (user)=>{
-    const campaign =await Campaign.find({ownerId : user._id});
+    const campaign =await Campaign.find({companyId : user._id});
     console.log(campaign);
     if(campaign){
         const today = new Date();
@@ -104,7 +105,7 @@ export const campaignExpirationAlert = async (user)=>{
                 notifType: "warning"
             });    
             await notif.save();
-            const notifications = await Notification.find({receiptId:notif.receiptId});
+            const notifications = await Notification.find({receiptId:notif.receiptId , isDeleted : 0});
             io.on("connection", socket => {
                 console.log('New client connected');
                 if (!onlineUsers.has(socket.id)) {
@@ -119,9 +120,7 @@ export const campaignExpirationAlert = async (user)=>{
         
             });
         }
-    }
-    
-       
+    }  
     //   io.on("connection", socket => {
     //         console.log('New client connected');  
     //     const campaign = Campaign.find({ownerId : user._id});
@@ -147,5 +146,71 @@ export const campaignExpirationAlert = async (user)=>{
     //     });
 
     // });
+}
+export const endedCampaign = async (updatedCampaign,user)=>{
+    if(updatedCampaign.successStatus === 1){
+        if(user.userType === 'startup'){
+            const notif = new Notification({
+                receiptId : user._id,
+                notifTitle: "Campaign Ended Successfully",
+                notifPayload: `Congratulation! Your campaign is successfully ended. Administration will contact you for further details .`,
+                notifType: "success"
+            });    
+            await notif.save();
+        }else{
+            const notif = new Notification({
+                receiptId : user._id,
+                notifTitle: "Investment Success",
+                notifPayload: `Congratulation! You got a successful investment ,Administration will contact you for further details `,
+                notifType: "success"
+            });    
+            await notif.save();
+
+        }
+        const notifications = await Notification.find({receiptId: user._id , isDeleted : 0});
+        io.on("connection", socket => {
+            if (!onlineUsers.has(socket.id)) {
+                onlineUsers.add(socket.id);
+                io.to(socket.id).emit('successCampaign', notifications.reverse());    
+            }
+           
+            socket.on('disconnect', () => {
+                onlineUsers.delete(socket.id); // Remove the disconnected user from the set
+            });
+    
+        });
+
+    }else{
+        if(user.userType === 'startup'){
+            const notif = new Notification({
+                receiptId : user._id,
+                notifTitle: "Campaign Failed",
+                notifPayload: ` Unfortunately! Your running campaign reached the expiration date without fullfiling its goal.`,
+                notifType: "error"
+            });    
+            await notif.save();
+        }else{
+            const notif = new Notification({
+                receiptId : user._id,
+                notifTitle: "Investment Failed",
+                notifPayload: `Unfortunately! your investment had been failed . Administration will contact you for further details . `,
+                notifType: "error"
+            });    
+            await notif.save();
+
+        }
+        const notifications = await Notification.find({receiptId:user._id , isDeleted : 0});
+        io.on("connection", socket => {
+            if (!onlineUsers.has(socket.id)) {
+                onlineUsers.add(socket.id);
+                io.to(socket.id).emit('failedCampaign', notifications.reverse());    
+            }
+           
+            socket.on('disconnect', () => {
+                onlineUsers.delete(socket.id); // Remove the disconnected user from the set
+            });
+    
+        });
 
     }
+}

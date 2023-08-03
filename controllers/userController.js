@@ -18,6 +18,7 @@ wich the ADMIN responsible for
 export const getUsers = async (req,res)=>{
   try {
     const userType = req.query.userType;  
+
     let result;
 
     if (userType==='all'){
@@ -26,6 +27,7 @@ export const getUsers = async (req,res)=>{
     else {
     result = await User.find({userType: userType}); 
     }
+
   res.json(result);
 } catch (error) {
   console.error('Error retrieving Users:', error);

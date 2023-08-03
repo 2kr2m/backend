@@ -1,12 +1,16 @@
 import Campaign from "../models/Campaign.js";
 import Token from "../models/Token.js";
 import User from "../models/User.js";
-import Buytoken from "../models/Buytoken.js";
-import moment from 'moment';
-import Feedback from "../models/Feedback.js";
 import { deploySmartContract } from "../routes/smartContractsRoutes.js";
 import { passAdmin } from "../seeds.js";
-import { notifStartCampaign } from "../utils/buildNotif.js";
+import { endedCampaign, notifStartCampaign } from "../utils/buildNotif.js";
+import io from "../initial.js";
+import Buytoken from "../models/Buytoken.js";
+import { sendEmail } from "../utils/sendEmails.js";
+import moment from 'moment';
+import Feedback from "../models/Feedback.js";
+
+
 
 
 export const startCampaign = async (req,res)=>{
@@ -39,14 +43,16 @@ export const startCampaign = async (req,res)=>{
             const tokenUpdate ={
                 status:"Approved",
                 startDate:createdAt,
+
                 endDate:expirationDate,
                 remainToken:tokenQuantity
             }
             const approvedToken = await Token.findByIdAndUpdate(id,tokenUpdate, { new: true });
             //deploy smart contract
-            deploySmartContract(passAdmin,tokenoppAddress,approvedToken);
+            await deploySmartContract(passAdmin,tokenoppAddress,approvedToken);
             
-            // notifStartCampaign(createdcampaign);
+            notifStartCampaign(createdcampaign);
+
             res.status(201).send(createdcampaign);
             
 
@@ -68,16 +74,7 @@ export const startCampaign = async (req,res)=>{
     //     campaign.ownerId = owner;
     //     campaign.createdAt = createdAt;
     //     campaign.expirationDate = expirationDate;
-    
-    //     const createdcampaign = await Campaign.create(campaign);
-    //     notifStartCampaign(createdcampaign);
-    //     res.status(201).send(createdcampaign);
-    // } catch (error) {
-    //     console.log(error);
 
-    // }
-
-    
 }
 export const rejectCampaign = async (req,res)=>{
     try {
@@ -91,6 +88,7 @@ export const rejectCampaign = async (req,res)=>{
         console.log(error);
     }
 }
+
 
 export const requestedCampaigns = async (req, res) => {
 	try {
@@ -129,6 +127,7 @@ export const requestedCampaigns = async (req, res) => {
     
           res.json(updatedToken);
 
+
       } catch (error) {
         res.status(500).json({ error: 'An error occurred' });
       }
@@ -142,6 +141,80 @@ export const requestedCampaigns = async (req, res) => {
       res.status(404).send({ message: "token Not Found" });
     }
 }
+
+  export const campaignResult = async(red,res) => {
+    
+    io.on("connection",async socket => {
+      let campaigns = await Campaign.find({status:"started"});
+      if(campaigns.length != 0){
+        campaigns.forEach(async (campaign) => {
+          const approvedToken = await Token.findById(campaign.tokenId);
+          const listInvestors = await Buytoken.find({ tokenName: approvedToken.tokenName}); 
+          const expirationDate = new Date(campaign.expirationDate);
+          const currentDate = new Date();
+          if (currentDate > expirationDate) {
+            if(approvedToken.remainToken === '0' ){
+              approvedToken.soldout = 1;
+              campaign.status = 'ended';
+              campaign.successStatus = 1;
+              await Token.findByIdAndUpdate(approvedToken._id, approvedToken, { new: true });
+              const updatedCampaign0 = await Campaign.findByIdAndUpdate(campaign._id, campaign, { new: true });
+              const sme = await User.findById(campaign.companyId);
+              await sendEmail(sme.email, sme.userName,"Campaign ended with success", `Hello ${sme.userName} , Congratulation! Your campaign is successfully ended. Administration will contact you for further details . `);
+              await endedCampaign(updatedCampaign0,sme);
+              listInvestors.forEach(async (investor)=>{
+                await sendEmail(investor.email, investor.name, `${approvedToken.campaignName} ended with success`, `Hello ${investor.name} , Congratulation! The campaign named ${approvedToken.campaignName} is successfully ended. Administration will contact you for further details . `);
+                await endedCampaign(updatedCampaign0,investor);
+              })
+              io.to(socket.id).emit('success campaign','success campaign');
+
+            }else{
+              approvedToken.soldout = 0;
+              campaign.status = 'ended';
+              campaign.successStatus = 0;
+              await Token.findByIdAndUpdate(approvedToken._id, approvedToken, { new: true });
+              const updatedCampaign1 = await Campaign.findByIdAndUpdate(campaign._id, campaign, { new: true });
+              const sme = await User.findById(campaign.companyId);
+              await sendEmail(sme.email, sme.userName,"Campaign Failed", `Hello ${sme.userName} , Unfortunately! Your running campaign reached the expiration date without fullfiling its goal.`);
+              await endedCampaign(updatedCampaign1,sme);
+              listInvestors.forEach(async (investor)=>{
+                await sendEmail(investor.email, investor.name, `${approvedToken.campaignName} Failed`, `Hello ${investor.name} , Unfortunately! The campaign named ${approvedToken.campaignName} had been failed . Administration will contact you for further details . `);
+                await endedCampaign(updatedCampaign1,investor);
+
+              })
+              io.to(socket.id).emit('failed campaign','failed campaign');
+            }
+          }else {
+            if(approvedToken.remainToken === '0' ){
+              approvedToken.soldout = 1;
+              campaign.status = 'ended';
+              campaign.successStatus = 1;
+              await Token.findByIdAndUpdate(approvedToken._id, approvedToken, { new: true });
+              const updatedcampaign2 = await Campaign.findByIdAndUpdate(campaign._id, campaign, { new: true });
+              const sme = await User.findById(campaign.companyId);
+              await sendEmail(sme.email, sme.userName,"Campaign ended with success", `Hello ${sme.userName} , Congratulation! Your campaign is successfully ended. Administration will contact you for further details . `);
+              await endedCampaign(updatedcampaign2,sme);
+              listInvestors.forEach(async (investor)=>{
+                await sendEmail(investor.email, investor.name, `${approvedToken.campaignName} ended with success`, `Hello ${investor.name} , Congratulation! The campaign named ${approvedToken.campaignName} is successfully ended. Administration will contact you for further details . `);
+                await endedCampaign(updatedcampaign2,investor);
+              })
+              io.to(socket.id).emit('success campaign','success campaign');
+
+            } else {
+              console.log("The expiration date has not been reached yet.");
+            }
+            
+          }
+        })
+      }
+      
+
+    });
+    
+
+   
+  }
+
 
 export const campaignDetails = async (req, res) => {
   const { authorization } = req.headers;
@@ -250,6 +323,5 @@ export const campaignDetails = async (req, res) => {
 
 
     }
-
 
 

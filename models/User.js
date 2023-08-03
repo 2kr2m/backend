@@ -96,7 +96,9 @@ const userSchema = new mongoose.Schema({
     isDeleted:{
         type:Number,
         default:0
-    }
+    },
+    socketIds: [{ type: String }],
+
 
 });
 

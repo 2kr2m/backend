@@ -42,6 +42,7 @@ const buytokenSchema = new mongoose.Schema({
         type:String,
         enum:['pending','accepted','rejected'], 
         default:'pending',
+
     },
     Date:{
         type:Date,

@@ -113,8 +113,8 @@ export const verif_get = async (req,res)=>{
 //resend verification
 //     export const resendverif_get = async (req,res)=>{
 //         try {
-//             const link = `${process.env.BASE_URL_AUTH}/verif/${req.params.id}/${token}`;
-//             await sendEmail(createdUser.email, "Password reset", `Thank you for your registration,please click on this link to verify your account ${link}`);
+//             const link = ${process.env.BASE_URL_AUTH}/verif/${req.params.id}/${token};
+//             await sendEmail(createdUser.email, "Password reset", Thank you for your registration,please click on this link to verify your account ${link});
 //         } catch (error) {
             
 //         }    
@@ -129,7 +129,7 @@ export const verif_get = async (req,res)=>{
     
 //      if (user.verified==0) {
     
-//      sendEmail(user.email, 'Verify Your Account', `${process.env.BASE_URL_AUTH}/verif/${createdUser._id}`);
+//      sendEmail(user.email, 'Verify Your Account', ${process.env.BASE_URL_AUTH}/verif/${createdUser._id});
     
 //      return res.status(200).send('Email verification resend');
     
@@ -168,7 +168,7 @@ export const signup_post= async (req,res)=>{
         let accessToken = createToken(createdUser._id);
         res.cookie('jwt',accessToken,{httpOnly:true,maxAge:maxAge*1000});
         const link = `${process.env.BASE_URL_AUTH}/verif/${createdUser._id}/${accessToken}`;
-        await sendEmail(createdUser.email,createdUser.userName, "Email Activation", `<h3>Click the link below to activate your email.</h3><p>${link}</p> `);
+        await sendEmail(createdUser.email,createdUser.userName, "Email Activation", `<h3>Click the link below to activate your email.</h3><p>${link}</p>` );
         res.status(201).json(`data:${accessToken}`);
 
     } catch (err) {

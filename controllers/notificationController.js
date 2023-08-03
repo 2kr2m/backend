@@ -15,13 +15,21 @@ export const sendNotif = async(req,res)=>{
         console.log(error);     
     }
 }
+export const setShownAlertNotif = async(req,res)=>{
+    
+    try {
+        await Notification.findByIdAndUpdate(req.params.id,{shown:1}, { new: true });
+    } catch (error) {
+        console.log(error);     
+    }
+}
 export const fetchNotif = async(req,res)=>{
     try {
         const { id } = req.params;
     
-        const data = await Notification.find({ receiptId : id });
+        const data = await Notification.find({ receiptId : id , isDeleted : 0 });
     
-        res.json(data);
+        res.json(data.reverse());
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -29,6 +37,10 @@ export const fetchNotif = async(req,res)=>{
       }
 }
 
-export const startCompaign = (req,res)=>{
-    
-}
+export const deleteNotif = async (req,res)=>{
+    try {
+       await Notification.findByIdAndUpdate(req.params.id, {isDeleted:1}, { new: true });;
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred' });
+    }
+};

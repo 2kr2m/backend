@@ -1,5 +1,8 @@
 import express from "express";
+
+
 import  {accepttransfer, addFeedback, allbuytoken, alldemand, buytoken, buytokens, getBuyTokenById, rejectTransfer, rejectionDetails, transfer}  from "../controllers/buytokenController.js"; 
+
 const buytokenRouter = express.Router();
 
 buytokenRouter.post('/buytoken',buytoken);
@@ -12,4 +15,5 @@ buytokenRouter.post('/rejectTransfer/:id',rejectTransfer);
 buytokenRouter.get('/getBuyTokenById/:id',getBuyTokenById);
 buytokenRouter.get('/rejectionDetails',rejectionDetails);
 buytokenRouter.post('/addFeedback',addFeedback);
+
 export default buytokenRouter;

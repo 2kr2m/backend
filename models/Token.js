@@ -86,7 +86,7 @@ const tokenSchema = new mongoose.Schema({
     },
     status:{
         type:String,
-        enum:['Pending','Rejected','Approved'],
+        enum:['Pending','Rejected','Approved','Failed','Succeed'],
         default: 'Pending'
     },
     campaignName:{
@@ -122,6 +122,8 @@ const tokenSchema = new mongoose.Schema({
     motifRejection:{
         type:String,
         default:''
+
+    
     },
     investorCount:{
         type:Number,
@@ -137,7 +139,6 @@ const tokenSchema = new mongoose.Schema({
         default:'',
 
     }
-
 })
 const Token = mongoose.model('token',tokenSchema);
 

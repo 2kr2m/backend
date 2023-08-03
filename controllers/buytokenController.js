@@ -5,7 +5,9 @@ import User from "../models/User.js";
 import Web3 from 'web3';
 import express from 'express';
 import {sendEmail} from "../utils/sendEmails.js";
+
 import Feedback from "../models/Feedback.js";
+
 
 import dotenv from "dotenv";
 const web3 =new Web3(new Web3.providers.HttpProvider("http://blockchain.docker.local"));
@@ -963,8 +965,10 @@ const token = await Token.findOne({tokenName:tokenName})
         paymentMethod,
         tokenName,
 		amount:(token.tokenPrice * quantity)
+
 	    })
 	sendEmail(buyer.email,buyer.userName, 'Demand for purchase Tokens', `<h3>Hello Mr/Mrs ${buyer.firstName} ${buyer.lastName}</h3> <p>We receive your demand for purchase ${BuyToken.quantity} tokens of ${BuyToken.tokenName}</p> <p> We want to inform you that for finalize the purchase of tokens you have to send this amount of money ${BuyToken.amount} to our rib ${tokenoppRib} </p> <p> Cordially</p>`);
+
     res.status(200).json(BuyToken);
 }
 
@@ -988,8 +992,10 @@ export const alldemand = async(req,res) =>{
             quantity:demand.quantity,
             paymentMethod:demand.paymentMethod,
             tokenName:demand.tokenName,
+
             status:demand.status,
-			amount:demand.amount
+			      amount:demand.amount
+
           }));
           res.json(demandData);
         } catch (error) {
@@ -1063,13 +1069,13 @@ export const accepttransfer = async(req,res) =>{
 
             const tokenContract = new web3.eth.Contract(abi, token.contractAddress);
 
-
-
             // if (token.remainToken>demand.quantity){
+
             const transfer = await tokenContract.methods.transfer(to,amount).send({from:from});
             token.remainToken = (token.remainToken - amount);
             token.maxInvest = (token.remainToken * token.tokenPrice);
             token.transactionHash.push(transfer.transactionHash);
+
 			token.investorCount= (token.investorCount +1);
             await Token.findOneAndUpdate(token._id,token);
             demand.status='accepted';
@@ -1081,6 +1087,7 @@ export const accepttransfer = async(req,res) =>{
         //     else {
         //         res.status(400).send('fail not enough remain tokens');
         //     };
+
 		}
         else {
         demand.status='rejected';
@@ -1095,6 +1102,7 @@ export const accepttransfer = async(req,res) =>{
     }
 
 }
+
 export const allbuytoken= async (req, res) => {
 		const { authorization } = req.headers;
 		const accessToken = authorization && authorization.split(' ')[1];  
@@ -1206,5 +1214,6 @@ export const rejectionDetails= async(req,res)=>{
 		  res.status(500).json({ error: 'Internal Server Error' });
 		}
 	  }
+
 
 

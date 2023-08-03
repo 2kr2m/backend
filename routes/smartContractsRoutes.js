@@ -1104,13 +1104,13 @@ export const deploySmartContract = async (passAdmin,adminAddress,token) => {
 		}).on('receipt', async (receipt) =>{
 			const contractAddress =receipt.contractAddress;
 			const Hash =receipt.transactionHash;
-			(async () => {
-				await Token.findByIdAndUpdate(
-				  token._id,
-				  { contractAddress, transactionHash:Hash },
-				  { new: true }
-				);
-			  })();
+
+			await Token.findByIdAndUpdate(
+				token._id,
+				{ contractAddress, transactionHash: Hash },
+				{ new: true }
+			  );
+
 		   });
   
 	  } catch (err) {
@@ -1205,7 +1205,7 @@ contractRouter.get('/balance', async (req, res) => {
 		// redemptionType: token.redemptionType,
 		yieldValue: token.yieldValue,
 		actionType: token.actionType
-		// investorCount : token.investorCount
+
 	  }));
   
 	  res.json(tokenData);
